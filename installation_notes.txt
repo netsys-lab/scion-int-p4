@@ -1,0 +1,92 @@
+Notes on Installing the P4 Tools
+================================
+See also: https://github.com/p4lang/tutorials/blob/master/vm/user-bootstrap.sh
+
+
+Behavioral Model (bmv2)
+-----------------------
+https://github.com/p4lang/behavioral-model
+
+### Dependencies (Ubuntu 20.04)
+git clone https://github.com/p4lang/behavioral-model.git
+
+sudo apt-get install automake cmake libjudy-dev libgmp-dev libpcap-dev \
+libboost-dev libboost-test-dev libboost-program-options-dev libboost-system-dev \
+libboost-filesystem-dev libboost-thread-dev libevent-dev libtool flex bison \
+pkg-config g++ libssl-dev
+
+sudo apt-get install thrift-compiler libthrift-dev libnanomsg-dev
+pip3 install thrift
+
+### Build (needs >2GiB RAM)
+./autogen.sh
+./configure --enable-debugger --with-pi
+make
+sudo make install
+sudo ldconfig
+
+cd targets/simple_switch_grpc
+./autogen.sh
+./configure --with-thrift
+make -j2
+sudo make install
+sudo ldconfig
+
+
+P4Runtime / PI Library
+----------------------
+https://github.com/p4lang/p4runtime
+https://github.com/p4lang/PI
+
+### Dependencies (Ubuntu 20.04)
+git clone --recursive https://github.com/p4lang/PI.git
+
+sudo apt-get install libjudy-dev libprotobuf17 libgrpc++-dev protobuf-compiler-grpc \
+libboost-thread-dev libreadline-dev
+
+### Fix for building with Apache Thrift 0.13.0 (see https://github.com/p4lang/PI/issues/533)
+sed -i -e 's#::stdcxx::shared_ptr#std::shared_ptr#g' targets/bmv2/conn_mgr.cpp
+
+### Build
+./autogen.sh
+./configure --with-bmv2 --with-proto --with-fe-cpp --with-cli
+make -j2
+make check
+sudo make install
+sudo ldconfig
+
+
+BPF Compiler Backend
+--------------------
+### Dependencies (Ubuntu 20.04)
+sudo apt-get install clang llvm libpcap-dev libelf-dev
+
+
+P4 Compiler
+-----------
+https://github.com/p4lang/p4c
+
+### Dependencies (Ubuntu 20.04)
+git clone --recursive https://github.com/p4lang/p4c.git
+
+sudo apt-get install cmake g++ git automake libtool libgc-dev bison flex \
+libfl-dev libgmp-dev libboost-dev libboost-iostreams-dev \
+libboost-graph-dev llvm pkg-config tcpdump doxygen graphviz
+
+# Install Python 2
+sudo apt-get install python2
+curl https://bootstrap.pypa.io/2.7/get-pip.py -o get-pip.py
+python get-pip.py
+pip2 install scapy ipaddr ply
+
+# Python 3 Dependencies
+pip3 install scapy ply
+
+### Build
+python3 backends/ebpf/build_libbpf
+mkdir build
+cd build
+cmake ..
+make -j2
+make -j4 check
+sudo make install
