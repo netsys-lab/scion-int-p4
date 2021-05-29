@@ -169,8 +169,8 @@ void Controller::handleError(const p4::v1::StreamError& error)
 bool Controller::createFloodMulticastGroup()
 {
     auto request = connection.createWriteRequest();
-    for (uint32_t i = 1; i <= NUM_SWITCH_PORTS; ++i)
-        request.addUpdate(p4::v1::Update::INSERT, buildFloodMcastGrpEntity(i, i));
+    for (uint32_t i = 0; i < NUM_SWITCH_PORTS; ++i)
+        request.addUpdate(p4::v1::Update::INSERT, buildFloodMcastGrpEntity(i + 1, i));
     return connection.sendWriteRequest(request);
 }
 
@@ -245,7 +245,7 @@ static std::unique_ptr<p4::v1::Entity> buildForwardTableEntry(MacAddr mac, Port 
 }
 
 /// \brief Build a configuration message for a multicast group encompassing all switch port but one.
-/// \param[in] id Multicast group ID.
+/// \param[in] id Multicast group ID. Must be larger than zero.
 /// \param[in] exclude Port excluded from the group.
 static std::unique_ptr<p4::v1::Entity> buildFloodMcastGrpEntity(uint32_t id, Port exclude)
 {
@@ -255,13 +255,14 @@ static std::unique_ptr<p4::v1::Entity> buildFloodMcastGrpEntity(uint32_t id, Por
     auto multicastGroup = entry->mutable_multicast_group_entry();
 
     multicastGroup->set_multicast_group_id(id);
-    for (Port i = 1; i <= NUM_SWITCH_PORTS; ++i)
+    uint32_t instance = 0;
+    for (Port i = 0; i < NUM_SWITCH_PORTS; ++i)
     {
         if (i != exclude)
         {
             auto replica = multicastGroup->add_replicas();
             replica->set_egress_port(i);
-            replica->set_instance(i);
+            replica->set_instance(instance++);
         }
     }
 

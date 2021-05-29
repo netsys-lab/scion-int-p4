@@ -101,7 +101,7 @@ control MyIngress(
     @id(0x01000004)
     @brief("Replicate the packet on all but the ingress port.")
     action flood() {
-        std_meta.mcast_grp = (bit<16>)std_meta.ingress_port;
+        std_meta.mcast_grp = (bit<16>)(std_meta.ingress_port + 1);
     }
 
     @id(0x02000001)

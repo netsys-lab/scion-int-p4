@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     pi_mc_session_init(&mcSession);
 
     const pi_mc_rid_t rid = 1;
-    pi_mc_port_t egressPorts[] = {1, 2, 3};
+    pi_mc_port_t egressPorts[] = {0, 1, 2};
     pi_mc_node_handle_t mcNode = {};
     status = pi_mc_node_create(mcSession, deviceId, rid, sizeof(egressPorts) / sizeof(pi_mc_port_t),
         egressPorts, &mcNode);

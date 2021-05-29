@@ -50,7 +50,9 @@ class SimpleSwitch(Switch):
         """
         cmd = [self.sw_path]
 
-        for port, intf in self.intfs.items():
+        # Only include interfaces without IP addresses to make sure the loopback interface is
+        # excluded. Port numbers start at zero.
+        for port, intf in enumerate(intf for intf in self.intfs.values() if not intf.IP()):
             cmd.append("-i {}@{}".format(port, intf.name))
 
         if self.config is not None:
