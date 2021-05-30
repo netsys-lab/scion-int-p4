@@ -46,7 +46,7 @@ $(BUILD_DIR)/%.cpp.o: %.cpp
 
 run: dataplane controller log_dir
 	rm -f $(LOG_DIR)/*
-	sudo python $(SIMPLE_SWITCH_TOPO) --config $(BUILD_DIR)/$(DEVICE_CONFIG) \
+	sudo python3 $(SIMPLE_SWITCH_TOPO) --config $(BUILD_DIR)/$(DEVICE_CONFIG) \
 	--log-file=$(LOG_DIR)/simple_switch --log-level=$(SW_LOG_LEVEL) $(TOPOFALGS)
 
 # Utilities
