@@ -14,3 +14,4 @@ Customize the [Vagrantfile](VM/Vagrantfile) to your needs and run `vagrant up` i
 Contents of this Repository
 ---------------------------
 - [BMv2 simple_switch examples](simple_switch/)
+- [Dockerized SCION topology including BMv2 switch](scion/)

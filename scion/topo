@@ -1,0 +1,173 @@
+#!/bin/bash
+
+export SCION_ROOT=${HOME}/scion
+export SCION_APPS=${HOME}/scion-apps
+DOCKER_IMAGE=scion_host:latest
+
+######################
+## Helper functions ##
+######################
+
+# Set the underlay IP and port of a SCION link.
+set_link_underlay() {
+    local as_a=$1
+    local underlay_a=$2
+    local as_b=$3
+    local underlay_b=$4
+    local as_a_config=$(isd_as_to_conf_dir $as_a)
+    local as_b_config=$(isd_as_to_conf_dir $as_b)
+    jq "(.border_routers[].interfaces[] | select(.\"isd_as\" == \"$as_b\") | .underlay) = {\"public\": \"$underlay_a\", \"remote\": \"$underlay_b\"}" \
+    ${SCION_ROOT}/gen/$as_a_config/topology.json | sponge ${SCION_ROOT}/gen/$as_a_config/topology.json
+    jq "(.border_routers[].interfaces[] | select(.\"isd_as\" == \"$as_a\") | .underlay) = {\"public\": \"$underlay_b\", \"remote\": \"$underlay_a\"}" \
+    ${SCION_ROOT}/gen/$as_b_config/topology.json | sponge ${SCION_ROOT}/gen/$as_b_config/topology.json
+}
+
+# Set the IP address on port of the SCION daemon.
+set_scion_daemon_address() {
+    local as_config=$1
+    local sd_address=$2
+    tomlq -t ".sd.address=\"$sd_address\"" ${SCION_ROOT}/gen/$as_config/sd.toml | sponge ${SCION_ROOT}/gen/$as_config/sd.toml
+}
+
+# Convert an ISD-AS pair (e.g., "1-ff00:0:1") to the corresponding configuration directory
+# (e.g., "ASff00_0_1").
+isd_as_to_conf_dir() {
+    echo $1 | sed -r 's/[0-9]-([0-9a-f]+):([0-9a-f]+):([0-9a-f]+)/AS\1_\2_\3/' -
+}
+
+# Makes the network namespace of a docker container visible to 'ip netns'.
+mount_netns() {
+    local cntr=$1
+    local pid=$(docker inspect -f '{{.State.Pid}}' $cntr)
+    sudo touch /var/run/netns/$cntr
+    sudo mount --bind /proc/$pid/ns/net /var/run/netns/$cntr
+}
+
+# Cleans up the bind mount created by mount_netns.
+umount_netns(){
+    local cntr=$1
+    sudo umount /var/run/netns/$cntr
+    sudo rm /var/run/netns/$cntr
+}
+
+# Create a veth pair connection the global namespace to another namespace.
+create_veth() {
+    local local=$1
+    local remote=$2
+    local netns=$3
+    local ip=$4
+    sudo ip link add $local type veth peer name $remote
+    sudo ip link set $remote netns $netns
+    sudo ip netns exec $netns ip add add dev $remote $ip
+    sudo ip netns exec $netns ip link set dev $remote up
+    sudo ip link set dev $local up
+}
+
+# Delete a veth pair.
+delete_veth() {
+    sudo ip link del $1
+}
+
+##############
+## Commands ##
+##############
+
+cmd_build() {
+    # Build switch dataplane and controller
+    make -C ../simple_switch/l2_switch_grpc
+
+    # Build docker image
+    docker build --build-arg SCION_UID=$(id -u $LOGNAME) --build-arg SCION_GID=$(id -g $LOGNAME) \
+    -t ${DOCKER_IMAGE} ./scion_host
+}
+
+cmd_run() {
+    if [[ "$(docker images -q ${DOCKER_IMAGE} 2> /dev/null)" == "" ]]; then
+        cmd_build
+    fi
+
+    sudo -v
+    mkdir -p log
+
+    # Create local topology
+    pushd ${SCION_ROOT}
+    ./scion.sh bazel_remote
+    ./scion.sh topology -c ~/p4-examples/SCION/topologies/diamond.yaml
+    popd
+
+    rm -f $SCION_ROOT/gen/links_established
+
+    # Rewrite BR interface IPs
+    set_link_underlay 1-ff00:0:1 10.1.1.2:50000 1-ff00:0:2 10.1.1.3:50000 # link 1
+    set_link_underlay 1-ff00:0:1 10.1.2.2:50000 1-ff00:0:3 10.1.2.4:50000 # link 2
+    set_link_underlay 1-ff00:0:2 10.1.3.3:50000 1-ff00:0:4 10.1.3.5:50000 # link 3
+    set_link_underlay 1-ff00:0:3 10.1.4.4:50000 1-ff00:0:4 10.1.4.5:50000 # link 4
+
+    # For convenience: Set scion daemon address to default value
+    set_scion_daemon_address ASff00_0_1 127.0.0.1:30255
+    set_scion_daemon_address ASff00_0_2 127.0.0.1:30255
+    set_scion_daemon_address ASff00_0_3 127.0.0.1:30255
+    set_scion_daemon_address ASff00_0_4 127.0.0.1:30255
+
+    # Run topology using docker-compose
+    rm -f ${SCION_ROOT}/logs/*
+    docker-compose up -d
+
+    # Create links to simple_switch
+    mount_netns host1
+    mount_netns host2
+    create_veth link1_sw0 link1_h1 host1 10.1.1.2/24
+    create_veth link1_sw1 link1_h2 host2 10.1.1.3/24
+
+    # Run simple_switch
+    sudo simple_switch_grpc --device-id 0 -i 0@link1_sw0 -i 1@link1_sw1 \
+    --log-level info --log-file log/switch --log-flush --no-p4 -- \
+    --grpc-server-addr localhost:9559 > /dev/null &
+
+    # Run controller
+    local SW_BUILD_DIR=../simple_switch/l2_switch_grpc/build
+    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
+    localhost:9559 0 1 > log/controller &
+
+    # Signal containers to start SCION
+    echo '1' > $SCION_ROOT/gen/links_established
+}
+
+cmd_stop() {
+    # Stop simple_switch and controller
+    sudo kill "$(pgrep --full '^simple_switch_grpc' | head -1)"
+
+    # Delete Docker containers and networks
+    docker-compose down
+
+    # Delete links to simple_switch
+    delete_veth link1_sw0
+    delete_veth link1_sw1
+    umount_netns host1
+    umount_netns host2
+}
+
+cmd_logs() {
+    docker-compose logs
+}
+
+cmd_enter() {
+    docker exec -it $1 bash -l
+}
+
+cmd_clean() {
+    rm -rf ./log
+}
+
+#################
+## Entry point ##
+#################
+
+COMMAND=$1
+shift
+
+case "$COMMAND" in
+    build|run|stop|logs|enter|clean|help)
+        "cmd_$COMMAND" "$@" ;;
+    *) echo "Command no recognized."; exit 1 ;;
+esac

@@ -152,7 +152,7 @@ git clone https://github.com/lschulz/p4-examples.git
 cd p4-examples
 
 #### Dependencies
-sudo apt-get install -y jq mininet
+sudo apt-get install -y jq yq mininet
 sudo pip3 install mininet
 
 #### Build

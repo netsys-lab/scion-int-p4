@@ -41,7 +41,7 @@ Incomplete learning Ethernet switch. Uses PI library directly.
 
 Run the dataplane:
 ```
-$ cd l2_switch_grpc
+$ cd l2_switch
 $ make run
 ```
 
