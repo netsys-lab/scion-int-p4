@@ -86,13 +86,15 @@ cmd_run() {
         cmd_build
     fi
 
+    set -e
     sudo -v
     mkdir -p log
 
     # Create local topology
-    pushd ${SCION_ROOT}
+    local SCRIPT_DIR=$PWD
+    pushd $SCION_ROOT
     ./scion.sh bazel_remote
-    ./scion.sh topology -c ~/p4-examples/SCION/topologies/diamond.yaml
+    ./scion.sh topology -c $SCRIPT_DIR/topologies/diamond.yaml
     popd
 
     rm -f $SCION_ROOT/gen/links_established
@@ -110,7 +112,7 @@ cmd_run() {
     set_scion_daemon_address ASff00_0_4 127.0.0.1:30255
 
     # Run topology using docker-compose
-    rm -f ${SCION_ROOT}/logs/*
+    rm -f $SCION_ROOT/logs/*
     docker-compose up -d
 
     # Create links to simple_switch
