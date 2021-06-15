@@ -1,0 +1,93 @@
+syntax = "proto3";
+package report;
+
+option go_package = "github.com/lschulz/p4-examples/telemetry/kafka/report";
+
+// Simplified INT report.
+message Report {
+    // Stack of recorded metadata. Data from the INT sink comes first, data from the INT source
+    // last.
+    repeated Node hops = 1;
+
+    enum PacketType {
+        None = 0;
+        Ethernet = 1;
+        IPv4 = 2;
+        IPv6 = 3;
+        SCION = 4;
+    }
+
+    // Type of the first header of the truncated packet in 'packet'.
+    PacketType packet_type = 2;
+
+    // Truncated packet headers. The first header is determined by 'packetType'.
+    bytes truncated_packet = 3;
+}
+
+// Metadata recorded by an INT node.
+message Node {
+    // AS the hop belongs to identified by AS number (48 bits). The ISD number is not included.
+    uint64 asn = 1;
+
+    // Node identifer. Identifies the specific switch/border router within an AS that recorded the
+    // metadata. The value 0 is reserved.
+    uint32 node_id = 2;
+
+    // Mapping from metadata type to value.
+    // Types 0-15 are reserved for standard metadata according to the INT specification.
+    // Types >=16 are used for SCION-specific metadata.
+    // Assigned types (INT v2.1 & Telemetry Report Specification v2.0):
+    //  1: Level 1 Ingress Interface ID (16bit) + Egress Interface ID (16 bits)
+    //  2: Hop Latency
+    //  3: Queue ID (8 bits) + QUeue Occupancy (24 bits)
+    //  4: Ingress Timestamp (64 bits)
+    //  5: Egress Timestamp (64 bits)
+    //  6: Level 2 Ingress Interface ID (32 bits) + Egress Interface ID (32 bits)
+    //  7: Egress Port TX Utilization
+    //  8: Buffer ID (8 bits) + Buffer Occupancy (24 bits)
+    // 15: Queue UD (8 bits) + Drop Reason (8 bits) + Padding (16 bits)
+    map<uint32, bytes> metadata = 3;
+}
+
+// Parameters for identifying flows.
+// This message is used as key type for Kafka events. By keying events on flows, reports from the
+// same flow go to the same partition and are ordered with respect to other reports from the same
+// flow.
+// All members are to be considered optional.
+message FlowKey {
+    // Source IP
+    oneof dst_ip {
+        fixed32 dst_ipv4 = 1;
+        IPv6Address dst_ipv6 = 2;
+    }
+
+    // Destination IP
+    oneof src_ip {
+        fixed32 src_ipv4 = 3;
+        IPv6Address src_ipv6 = 4;
+    }
+
+    // Destination port
+    uint32 dst_port = 5;
+
+    // Source port
+    uint32 src_port = 6;
+
+    enum Protocol {
+        None = 0;
+        UDP = 1;
+        TCP = 2;
+    }
+
+    // L4 protocol type
+    Protocol protocol = 7;
+
+    // 20-bit FlowID from the SCION header
+    uint32 flow_id = 8;
+}
+
+// 128-bit IPv6 address
+message IPv6Address {
+    fixed64 high = 1;
+    fixed64 low = 2;
+}
