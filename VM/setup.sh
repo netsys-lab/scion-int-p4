@@ -13,7 +13,7 @@ git clone https://github.com/scionproto/scion
 cd scion
 ./tools/install_bazel
 APTARGS='-y' ./env/deps
-sudo apt install -y python-is-python3
+sudo apt-get install -y python-is-python3
 source ~/.profile
 ./scion.sh bazel_remote
 ./scion.sh build
@@ -23,10 +23,10 @@ docker stop bazel-remote-cache
 ### Install go (for SCION Apps)
 #### https://golang.org/doc/install
 cd ~
-curl -fsSL -O https://golang.org/dl/go1.16.4.linux-amd64.tar.gz
+curl -fsSL -O https://golang.org/dl/go1.16.6.linux-amd64.tar.gz
 sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz
-rm go1.16.4.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.16.6.linux-amd64.tar.gz
+rm go1.16.6.linux-amd64.tar.gz
 echo 'PATH=$PATH:/usr/local/go/bin' >> ~/.profile
 source ~/.profile
 
