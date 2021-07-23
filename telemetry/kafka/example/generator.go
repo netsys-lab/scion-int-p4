@@ -1,9 +1,11 @@
-package report
+package main
 
 import (
 	"encoding/binary"
 	"math/rand"
 	"time"
+
+	"github.com/lschulz/p4-examples/telemetry/kafka/report"
 )
 
 const (
@@ -19,16 +21,16 @@ const (
 )
 
 // Generate a random report.
-func GenerateReport(path []uint64, nodeId uint32) *Report {
+func GenerateReport(path []uint64, nodeId uint32) *report.Report {
 	var (
-		hops                []*Node
+		hops                []*report.Hop
 		hopLatency          [4]byte
 		ingressTimestamp    [8]byte
 		egressTimestamp     [8]byte
 		egressTxUtilization [4]byte
 	)
 
-	hops = make([]*Node, 0, len(path))
+	hops = make([]*report.Hop, 0, len(path))
 
 	for _, asn := range path {
 		t0 := uint64(time.Now().Nanosecond())
@@ -38,25 +40,23 @@ func GenerateReport(path []uint64, nodeId uint32) *Report {
 		binary.BigEndian.PutUint64(egressTimestamp[:], t1)
 		binary.BigEndian.PutUint32(egressTxUtilization[:], uint32(1000+rand.Int31n(101)-50))
 
-		node := Node{
+		node := report.Hop{
 			Asn:    asn,
 			NodeId: nodeId,
 			Metadata: map[uint32][]byte{
-				HopLatency:       hopLatency[:],
-				IngressTimestamp: ingressTimestamp[:],
-				EgressTimestamp:  egressTimestamp[:],
-				TxUtilization:    egressTxUtilization[:],
+				uint32(report.MetadataType_HOP_LATENCY):           hopLatency[:],
+				uint32(report.MetadataType_INGRESS_TIMESTAMP):     ingressTimestamp[:],
+				uint32(report.MetadataType_EGRESS_TIMESTAMP):      egressTimestamp[:],
+				uint32(report.MetadataType_EGRESS_TX_UTILIZATION): egressTxUtilization[:],
 			},
 		}
 
 		hops = append(hops, &node)
 	}
 
-	report := Report{
+	return &report.Report{
 		Hops:            hops,
-		PacketType:      Report_SCION,
+		PacketType:      report.Report_SCION,
 		TruncatedPacket: make([]byte, 64),
 	}
-
-	return &report
 }

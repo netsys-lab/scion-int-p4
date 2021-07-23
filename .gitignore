@@ -1,3 +1,5 @@
 build
 docs
 log
+telemetry/kafka/benchmark/benchmark
+telemetry/kafka/example/example

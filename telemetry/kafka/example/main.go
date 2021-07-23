@@ -138,7 +138,7 @@ func runProducer(numEvents int, numFlows int, server string) {
 			panic(err)
 		}
 
-		report, err := proto.Marshal(report.GenerateReport(path, 1))
+		report, err := proto.Marshal(GenerateReport(path, 1))
 		if err != nil {
 			panic(err)
 		}
