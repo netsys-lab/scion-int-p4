@@ -8,7 +8,7 @@ from functools import partial
 from mininet.cli import CLI
 from mininet.topo import Topo
 from mininet.net import Mininet
-from mininet.node import Switch
+from mininet.node import Host, Switch
 from mininet.log import info, setLogLevel
 
 
@@ -110,6 +110,17 @@ class SimpleSwitchGrpc(SimpleSwitch):
             cmd.append("--cpu-port {}".format(self.cpu_port))
 
 
+class SimpleSwitchHost(Host):
+    """Special host for SimpleSwitchTopo topologies."""
+
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+
+        # Make sure UDP/TCP checksums are computed on virtual interfaces.
+        self.cmd("iptables -t mangle -A POSTROUTING \\! -o lo -p udp -m udp -j CHECKSUM --checksum-fill")
+        self.cmd("iptables -t mangle -A POSTROUTING \\! -o lo -p tcp -m tcp -j CHECKSUM --checksum-fill")
+
+
 class SingleSwitchTopo(Topo):
     """Topology consisting of a single switch and `n` hosts."""
     def build(self, n=2, config=None, log_file=None, log_level="info"):
@@ -145,7 +156,7 @@ def main():
     else:
         switch = partial(SimpleSwitchGrpc, grpc_addr=args.grpc, cpu_port=args.cpu_port)
 
-    net = Mininet(topo=topo, switch=switch, controller=None)
+    net = Mininet(topo=topo, host=SimpleSwitchHost, switch=switch, controller=None)
 
     net.start()
     CLI(net)
@@ -160,3 +171,4 @@ if __name__ == '__main__':
 # Enable use as "--custom" file, e.g., "mn --custom simple_switch.py --topo single,2".
 topos = {'single': SingleSwitchTopo}
 switches = {'simple_switch': SimpleSwitch, 'simple_switch_grpc': SimpleSwitchGrpc}
+hosts = { 'simple_switch_host': SimpleSwitchHost }

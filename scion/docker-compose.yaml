@@ -13,6 +13,9 @@ services:
       - ${SCION_ROOT:?}/gen-cache:/home/scion/scion/gen-cache
       - ${SCION_ROOT:?}/gen-certs:/home/scion/scion/gen-certs
       - ${SCION_ROOT:?}/logs:/home/scion/scion/logs
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     networks:
       # link1:
       #   ipv4_address: 10.1.1.2
@@ -30,6 +33,9 @@ services:
       - ${SCION_ROOT:?}/gen-cache:/home/scion/scion/gen-cache
       - ${SCION_ROOT:?}/gen-certs:/home/scion/scion/gen-certs
       - ${SCION_ROOT:?}/logs:/home/scion/scion/logs
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     networks:
       # link1:
       #   ipv4_address: 10.1.1.3

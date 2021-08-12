@@ -68,6 +68,16 @@ delete_veth() {
     sudo ip link del $1
 }
 
+# Configure iptables to always compute UDP/TCP checksum for outgoing packets on the given interface.
+force_chksum_update() {
+    local cntr=$1
+    local interface=$2
+    docker exec -u root $cntr \
+    iptables -t mangle -A POSTROUTING -o $interface -p udp -m udp -j CHECKSUM --checksum-fill
+    docker exec -u root $cntr \
+    iptables -t mangle -A POSTROUTING -o $interface -p tcp -m tcp -j CHECKSUM --checksum-fill
+}
+
 ##############
 ## Commands ##
 ##############
@@ -120,6 +130,8 @@ cmd_run() {
     mount_netns host2
     create_veth link1_sw0 link1_h1 host1 10.1.1.2/24
     create_veth link1_sw1 link1_h2 host2 10.1.1.3/24
+    force_chksum_update host1 link1_h1
+    force_chksum_update host2 link1_h2
 
     # Run simple_switch
     sudo simple_switch_grpc --device-id 0 -i 0@link1_sw0 -i 1@link1_sw1 \

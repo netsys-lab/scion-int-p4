@@ -4,7 +4,7 @@ ARG SCION_UID=1000
 ARG SCION_GID=1000
 
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y supervisor python3-pip iproute2 iputils-ping
+RUN apt-get install -y supervisor python3-pip iproute2 iputils-ping iptables
 RUN pip3 install supervisor-wildcards appdeps
 
 # Create scion user
