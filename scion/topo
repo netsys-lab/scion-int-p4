@@ -39,6 +39,7 @@ isd_as_to_conf_dir() {
 mount_netns() {
     local cntr=$1
     local pid=$(docker inspect -f '{{.State.Pid}}' $cntr)
+    sudo mkdir -p /var/run/netns
     sudo touch /var/run/netns/$cntr
     sudo mount --bind /proc/$pid/ns/net /var/run/netns/$cntr
 }

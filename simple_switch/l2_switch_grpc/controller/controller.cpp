@@ -56,7 +56,7 @@ Controller::Controller(
     }
     if (!macLearnDigestId)
         throw std::runtime_error(
-            std::string("P4Info does not contain a digest of the name")
+            std::string("P4Info does not contain a digest of the name ")
             + DIGEST_MAC_LEARN_NAME);
 }
 
