@@ -214,8 +214,8 @@ func main() {
 
 	// Generate reports
 	t0 := time.Now()
-	for _, flow := range flows {
-		flow.start(&wg)
+	for i := range flows {
+		flows[i].start(&wg)
 	}
 	wg.Wait()
 	remaining := prod.Flush(10_000)
