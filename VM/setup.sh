@@ -23,10 +23,10 @@ docker stop bazel-remote-cache
 ### Install go (for SCION Apps)
 #### https://golang.org/doc/install
 cd ~
-curl -fsSL -O https://golang.org/dl/go1.16.6.linux-amd64.tar.gz
+curl -fsSL -O https://golang.org/dl/go1.17.3.linux-amd64.tar.gz
 sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf go1.16.6.linux-amd64.tar.gz
-rm go1.16.6.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.17.3.linux-amd64.tar.gz
+rm go1.17.3.linux-amd64.tar.gz
 echo 'PATH=$PATH:/usr/local/go/bin' >> ~/.profile
 source ~/.profile
 
