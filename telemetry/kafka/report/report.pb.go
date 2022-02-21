@@ -311,7 +311,7 @@ type Hop struct {
 
 	// AS the hop belongs to identified by AS number (48 bits). The ISD number is not included.
 	Asn uint64 `protobuf:"varint,1,opt,name=asn,proto3" json:"asn,omitempty"`
-	// Node identifer. Identifies the specific switch/border router within an AS that recorded the
+	// Node identifier. Identifies the specific switch/border router within an AS that recorded the
 	// metadata. The value 0 is reserved.
 	NodeId uint32 `protobuf:"varint,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Mapping from metadata type to value

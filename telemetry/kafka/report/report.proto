@@ -75,7 +75,7 @@ message Hop {
     // AS the hop belongs to identified by AS number (48 bits). The ISD number is not included.
     uint64 asn = 1;
 
-    // Node identifer. Identifies the specific switch/border router within an AS that recorded the
+    // Node identifier. Identifies the specific switch/border router within an AS that recorded the
     // metadata. The value 0 is reserved.
     uint32 node_id = 2;
 
