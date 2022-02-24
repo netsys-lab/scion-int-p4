@@ -5,6 +5,8 @@
 
 
 /// \brief Convert a string of bytes in big-endian byte-order to a little-endian value.
+/// \warning The input string is read in reverse order. If the string contains more bytes than
+/// needed, the leading bytes will be cut off.
 /// \tparam bytes Maximum number of bytes to extract from the bitstring.
 template <size_t bytes, typename T>
 T fromBitstring(const std::string& bitstring)
@@ -14,7 +16,8 @@ T fromBitstring(const std::string& bitstring)
 
     T value = 0;
     size_t i = 0;
-    for (auto c = bitstring.rbegin(); c != bitstring.rend() && i < bytes; ++c)
+    auto end = bitstring.rend();
+    for (auto c = bitstring.rbegin(); c != end && i < bytes; ++c)
         value |= static_cast<T>(static_cast<unsigned char>(*c)) << (8 * i++);
 
     return value;

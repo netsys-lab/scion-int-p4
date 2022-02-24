@@ -1,5 +1,5 @@
-P4 Examples
-===========
+Experiments with P4, SCION and In-Band Network Telemetry
+========================================================
 
 
 Development Environment Setup
@@ -13,6 +13,6 @@ Customize the [Vagrantfile](VM/Vagrantfile) to your needs and run `vagrant up` i
 
 Contents of this Repository
 ---------------------------
-- [BMv2 simple_switch examples](simple_switch/)
-- [Dockerized SCION topology including BMv2 switch](scion/)
-- [In-band Network Telemetry experiments](telemetry/)
+- [Data planes and controllers for the BMv2 simple_switch](simple_switch/)
+- [Dockerized SCION topologies with BMv2 switches](scion/)
+- [In-band Network Telemetry report format for SCION](telemetry/kafka)

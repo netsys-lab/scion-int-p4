@@ -1,8 +1,9 @@
 #!/bin/bash
 
+DOCKER_IMAGE=scion_host:latest
+SWITCH=l2_switch_grpc
 export SCION_ROOT=${HOME}/scion
 export SCION_APPS=${HOME}/scion-apps
-DOCKER_IMAGE=scion_host:latest
 
 . helper.bash
 
@@ -12,7 +13,7 @@ DOCKER_IMAGE=scion_host:latest
 
 cmd_build() {
     # Build switch dataplane and controller
-    make -C ../simple_switch/l2_switch_grpc
+    make -C ../simple_switch/${SWITCH}
 
     # Build docker image
     docker build --build-arg SCION_UID=$(id -u $LOGNAME) --build-arg SCION_GID=$(id -g $LOGNAME) \
@@ -67,7 +68,7 @@ cmd_run() {
     --grpc-server-addr localhost:9559 > /dev/null &
 
     # Run controller
-    local SW_BUILD_DIR=../simple_switch/l2_switch_grpc/build
+    local SW_BUILD_DIR=../simple_switch/${SWITCH}/build
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
     localhost:9559 0 1 > log/controller &
 

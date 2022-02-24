@@ -1,9 +1,10 @@
 #!/bin/bash
 
+DOCKER_IMAGE=scion_host:latest
+SWITCH=l2_switch_grpc
+COMPOSE_ARGS="-f docker-compose-demo.yaml -p int-demo"
 export SCION_ROOT=${HOME}/scion
 export SCION_APPS=${HOME}/scion-apps
-DOCKER_IMAGE=scion_host:latest
-COMPOSE_ARGS="-f docker-compose-demo.yaml -p int-demo"
 
 . helper.bash
 
@@ -13,7 +14,7 @@ COMPOSE_ARGS="-f docker-compose-demo.yaml -p int-demo"
 
 cmd_build() {
     # Build switch dataplane and controller
-    make -C ../simple_switch/l2_switch_grpc
+    make -C ../simple_switch/${SWITCH}
 
     # Build docker image
     docker build --build-arg SCION_UID=$(id -u $LOGNAME) --build-arg SCION_GID=$(id -g $LOGNAME) \
@@ -125,7 +126,7 @@ EOF
     force_chksum_update as7 veth23
 
     # Switches
-    local SW_BUILD_DIR=../simple_switch/l2_switch_grpc/build
+    local SW_BUILD_DIR=../simple_switch/${SWITCH}/build
     # Switch 1
     local grpc_port=9559
     local thrift_port=9190

@@ -1,4 +1,4 @@
-#include "controller.h"
+#include "mac_learn.h"
 #include "bitstring.h"
 
 #include <p4/v1/p4data.pb.h>
@@ -34,19 +34,13 @@ static std::unique_ptr<p4::v1::Entity> buildFloodMcastGrpEntity(uint32_t id, Por
 static std::unique_ptr<p4::v1::Entity> buildDigestEntity(uint32_t digestId);
 
 
-////////////////
-// Controller //
-////////////////
+/////////////////////
+// MacLearningCtrl //
+////////////////////
 
-Controller::Controller(
-    std::unique_ptr<P4Info> p4Info, DeviceConfig config,
-    const grpc::string& address, DeviceId deviceId, uint64_t electionId)
-    : p4Info(std::move(p4Info))
-    , macLearnDigestId(0)
-    , deviceConfig(std::move(config))
-    , connection(address, deviceId, electionId)
+MacLearningCtrl::MacLearningCtrl(SwitchConnection& con, const p4::config::v1::P4Info &p4Info)
 {
-    for (const auto& digest : this->p4Info->digests())
+    for (const auto& digest : p4Info.digests())
     {
         if (digest.preamble().name() == DIGEST_MAC_LEARN_NAME)
         {
@@ -60,66 +54,23 @@ Controller::Controller(
             + DIGEST_MAC_LEARN_NAME);
 }
 
-void Controller::run()
-{
-    using p4::v1::StreamMessageResponse;
 
-    if (!connection.sendMasterArbitrationUpdate())
-        return;
-
-    StreamMessageResponse msg;
-    while(connection.readStream(msg))
-    {
-        switch (msg.update_case())
-        {
-        case StreamMessageResponse::kArbitration:
-            handleArbitrationUpdate(msg.arbitration());
-            break;
-        case StreamMessageResponse::kPacket:
-            handlePacketIn(msg.packet());
-            break;
-        case StreamMessageResponse::kDigest:
-            handleDigest(msg.digest());
-            break;
-        case StreamMessageResponse::kIdleTimeoutNotification:
-            handleIdleTimeout(msg.idle_timeout_notification());
-            break;
-        case StreamMessageResponse::kError:
-            handleError(msg.error());
-            break;
-        default:
-            std::cout << "Unknown update from dataplane" << std::endl;
-            break;
-        }
-    }
-}
-
-/// \brief Handle an arbitration update message.
-/// \details An arbitration update is send to all controllers for a certain device and role
-/// combination when the primary controller for that role changes.
-void Controller::handleArbitrationUpdate(const p4::v1::MasterArbitrationUpdate& arbUpdate)
+void MacLearningCtrl::handleArbitrationUpdate(
+    SwitchConnection &con, const p4::v1::MasterArbitrationUpdate& arbUpdate)
 {
     if (!arbUpdate.status().code())
     {
-        std::cout << "Elected as primary controller" << std::endl;
-        connection.setPipelineConfig(*p4Info.get(), deviceConfig);
-        createFloodMulticastGroup();
-        installStaticTableEntries();
-        configDigestMessages();
-    }
-    else
-    {
-        std::cout << "Other controller elected as primary" << std::endl;
+        createFloodMulticastGroup(con);
+        installStaticTableEntries(con);
+        configDigestMessages(con);
     }
 }
 
-/// \brief Handle a digest list received from the dataplane.
-/// \details Digests are buffered before the are sent to the controller bundeled in a digest list.
-void Controller::handleDigest(const p4::v1::DigestList& digestList)
+bool MacLearningCtrl::handleDigest(SwitchConnection &con, const p4::v1::DigestList& digestList)
 {
     if (digestList.digest_id() == macLearnDigestId)
     {
-        auto writeRequest = connection.createWriteRequest();
+        auto writeRequest = con.createWriteRequest();
         for (const auto& digest : digestList.data())
         {
             if (!digest.has_struct_() || digest.struct_().members_size() != 2)
@@ -127,11 +78,9 @@ void Controller::handleDigest(const p4::v1::DigestList& digestList)
             auto macLearnMsg = digest.struct_();
 
             // Extract source MAC
-            size_t size = std::min(macLearnMsg.members(0).bitstring().size(), MAC_ADDR_BYTES);
             auto srcMac = fromBitstring<MAC_ADDR_BYTES, MacAddr>(macLearnMsg.members(0).bitstring());
 
             // Extract ingress port
-            size = std::min(macLearnMsg.members(1).bitstring().size(), PORT_BYTES);
             auto ingressPort = fromBitstring<PORT_BYTES, Port>(macLearnMsg.members(1).bitstring());
 
             std::cout << "Learned: MAC 0x" << std::hex << std::setw(12) << std::setfill('0');
@@ -144,21 +93,14 @@ void Controller::handleDigest(const p4::v1::DigestList& digestList)
         }
 
         // Send updates to dataplane
-        connection.sendWriteRequest(writeRequest);
+        con.sendWriteRequest(writeRequest);
 
         // Acknowledge digests
-        connection.ackDigestList(digestList.digest_id(), digestList.list_id());
-    }
-    else
-        std::cout << "Received unknown digest" << std::endl;
-}
+        con.ackDigestList(digestList.digest_id(), digestList.list_id());
 
-/// \brief Handle error status notification.
-/// \details Stream errors indicate an error with a previous StreamMessageRequest.
-void Controller::handleError(const p4::v1::StreamError& error)
-{
-    std::cout << "Stream Error " << error.canonical_code() << ": ";
-    std::cout << error.message() << std::endl;
+        return true;
+    }
+    return false;
 }
 
 /// \brief Create multicast groups for flooding packets.
@@ -166,29 +108,29 @@ void Controller::handleError(const p4::v1::StreamError& error)
 /// multicast group of port n contains all other ports with the exception of the CPU port. Thereby,
 /// setting the multicast group of a packet entering the switch on port n to n floods the packet
 /// to all other ports.
-bool Controller::createFloodMulticastGroup()
+bool MacLearningCtrl::createFloodMulticastGroup(SwitchConnection &con)
 {
-    auto request = connection.createWriteRequest();
+    auto request = con.createWriteRequest();
     for (uint32_t i = 0; i < NUM_SWITCH_PORTS; ++i)
         request.addUpdate(p4::v1::Update::INSERT, buildFloodMcastGrpEntity(i + 1, i));
-    return connection.sendWriteRequest(request);
+    return con.sendWriteRequest(request);
 }
 
 /// \brief Install table entries that are known a priori and should not be learned.
-bool Controller::installStaticTableEntries()
+bool MacLearningCtrl::installStaticTableEntries(SwitchConnection &con)
 {
     // Create entry for broadcast address
-    auto request = connection.createWriteRequest();
+    auto request = con.createWriteRequest();
     request.addUpdate(p4::v1::Update::INSERT, buildLearnTableEntry(0xFFFFFFFFFFFF));
-    return connection.sendWriteRequest(request);
+    return con.sendWriteRequest(request);
 }
 
 /// \brief Configure the transmission of digests.
-bool Controller::configDigestMessages()
+bool MacLearningCtrl::configDigestMessages(SwitchConnection &con)
 {
-    auto request = connection.createWriteRequest();
+    auto request = con.createWriteRequest();
     request.addUpdate(p4::v1::Update::INSERT, buildDigestEntity(macLearnDigestId));
-    return connection.sendWriteRequest(request);
+    return con.sendWriteRequest(request);
 }
 
 

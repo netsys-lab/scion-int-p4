@@ -21,12 +21,12 @@ docker stop bazel-remote-cache
 
 
 ### Install go (for SCION Apps)
-#### https://golang.org/doc/install
+#### https://go.dev/doc/install
 cd ~
-curl -fsSL -O https://golang.org/dl/go1.17.3.linux-amd64.tar.gz
+curl -fsSL -O https://go.dev/dl/go1.17.7.linux-amd64.tar.gz
 sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf go1.17.3.linux-amd64.tar.gz
-rm go1.17.3.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.17.7.linux-amd64.tar.gz
+rm go1.17.7.linux-amd64.tar.gz
 echo 'PATH=$PATH:/usr/local/go/bin' >> ~/.profile
 source ~/.profile
 
@@ -46,6 +46,33 @@ rm install.sh
 ### Build
 make -j $(nproc)
 sudo cp -t /usr/local/go/bin bin/scion-*
+
+
+### Install boost from source
+cd ~
+curl -fsSL -O https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.tar.bz2
+if ! echo "8681f175d4bdb26c52222665793eef08490d7758529330f98d3b29dd0735bccc boost_1_78_0.tar.bz2" | sha256sum -c -; then
+    echo "Incorrect checksum"
+    exit 1
+fi
+tar -xjf boost_1_78_0.tar.bz2
+rm boost_1_78_0.tar.bz2
+cd boost_1_78_0
+./bootstrap.sh --prefix=/usr
+./b2
+sudo ./b2 install
+
+
+### Install gRPC from source
+#### https://grpc.io/docs/languages/cpp/quickstart/
+cd ~
+git clone --recurse-submodules -b v1.43.0 https://github.com/grpc/grpc.git
+cd grpc
+mkdir -p cmake/build
+cd cmake/build
+cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF ../..
+make -j $(nproc)
+sudo make install
 
 
 ### Install nanomsg
@@ -70,9 +97,11 @@ cd behavioral-model
 
 #### Dependencies
 sudo apt-get install -y automake cmake libjudy-dev libgmp-dev libpcap-dev \
-libboost-dev libboost-test-dev libboost-program-options-dev libboost-system-dev \
-libboost-filesystem-dev libboost-thread-dev libevent-dev libtool flex bison \
+libevent-dev libtool flex bison \
 pkg-config g++ libssl-dev
+# Boost is installed from source
+# sudo apt-get install -y libboost-dev libboost-test-dev libboost-program-options-dev \
+# libboost-system-dev libboost-filesystem-dev libboost-thread-dev
 sudo apt-get install -y thrift-compiler libthrift-dev libnanomsg-dev
 sudo pip3 install thrift
 
@@ -91,8 +120,12 @@ git clone --recursive https://github.com/p4lang/PI.git
 cd PI
 
 #### Dependencies
-sudo apt-get install -y libprotobuf-dev libgrpc-dev libgrpc++-dev protobuf-compiler \
-protobuf-compiler-grpc libjudy-dev libboost-thread-dev libreadline-dev
+sudo apt-get install -y libjudy-dev libreadline-dev
+# Boost is installed from source
+# sudo apt-get install -y libboost-thread-dev
+# protobuf and gRPC are installed from source
+# sudo apt-get install -y libprotobuf-dev libgrpc-dev libgrpc++-dev protobuf-compiler \
+# protobuf-compiler-grpc
 
 #### Fix for building with Apache Thrift 0.13.0 (see https://github.com/p4lang/PI/issues/533)
 sed -i -e 's#::stdcxx::shared_ptr#std::shared_ptr#g' targets/bmv2/conn_mgr.cpp
@@ -127,8 +160,9 @@ cd p4c
 
 #### Dependencies
 sudo apt-get install -y cmake g++ git automake libtool libgc-dev bison flex \
-libfl-dev libgmp-dev libboost-dev libboost-iostreams-dev \
-libboost-graph-dev llvm pkg-config tcpdump doxygen graphviz
+libfl-dev libgmp-dev llvm pkg-config tcpdump doxygen graphviz
+# Boost is installed from source
+sudo apt-get install -y libboost-dev libboost-iostreams-dev libboost-graph-dev
 
 #### eBPF backend dependencies
 sudo apt-get install -y clang llvm libpcap-dev libelf-dev
@@ -143,6 +177,17 @@ cd build
 cmake ..
 make -j $(nproc)
 sudo make install
+
+
+### Install asio-grpc
+#### https://github.com/Tradias/asio-grpc
+cd ~
+git clone https://github.com/Tradias/asio-grpc.git
+cd asio-grpc
+mkdir build
+cd build
+cmake ..
+sudo cmake --build . --target install
 
 
 ### Install P4 examples

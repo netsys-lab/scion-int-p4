@@ -2,6 +2,7 @@
 #include "p4_util.h"
 #include "controllers/default.h"
 #include "controllers/mac_learn.h"
+#include "controllers/int/int.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -24,6 +25,7 @@ int main(int argc, char* argv[])
         );
         control.addController<DefaultController>();
         control.addController<MacLearningCtrl>();
+        control.addController<IntController>();
         control.run();
         return 0;
     }

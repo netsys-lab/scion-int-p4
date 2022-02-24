@@ -1,51 +1,22 @@
-`simple_switch` Example Programs
-================================
+Control and data plane programs for the `simple_switch`
+=======================================================
 
-[simple_switch.py](simple_switch.py) contains a simple Mininet topology definition. There are two
-switches: SimpleSwitch and SimpleSwitchGrpc which correspond to the bmv2 targets simple_switch
-and simple_switch_grc.
+Directory Contents
+------------------
 
+### BMv2 Programs with P4Runtime Controllers
+- [l2_switch_grpc](l2_switch_grpc/) Very simple learning Ethernet switch.
+- [int_switch](int_switch/) In-band Network Telemetry for SCION
 
-l2_switch_grpc (simple_switch_grpc)
------------------------------------
-Learning Ethernet switch with a P4Runtime controller implemented in C++.
-
-Run the dataplane:
-```
-$ cd l2_switch_grpc
-$ make run
-```
-
-The controller is not integrated in the Mininet topology and has to be started in a second terminal:
-```
-$ build/controller/ctrl build/p4info.txt build/l2_switch.json localhost:9559 0 1
-```
-The controller will exit when the Mininet instance is terminated.
-
-You can also attach additional controllers with a different election ID, although every change in
-primary controller simply resets the pipeline and does not keep state:
-```
-$ build/controller/ctrl build/p4info.txt build/l2_switch.json localhost:9559 0 2
-```
-
-Inspecting the dataplane with the bmv2 runtime CLI:
-```
-$ behavioral-model/tools/runtime_CLI.py
-```
-Try commands like `show_tables` and `table_dump forward_table`. Type `EOF` to exit.
+The actual control adn data plane implementations are in [control_plane](control_plane/) and
+[data_plane](data_plane/).
 
 
-l2_switch (simple_switch)
--------------------------
-Incomplete learning Ethernet switch. Uses PI library directly.
+### Mininet
+- [simple_switch.py](simple_switch.py) contains a simple Mininet topology definition for basic
+testing. There are two switches: SimpleSwitch and SimpleSwitchGrpc which correspond to the bmv2
+targets simple_switch and simple_switch_grc.
 
-Run the dataplane:
-```
-$ cd l2_switch
-$ make run
-```
 
-Run the controller in a second terminal:
-```
-$ build/controller/ctrl
-```
+### Obsolete Projects
+- [l2_switch](l2_switch/) Incomplete learning Ethernet switch. Uses PI library directly.

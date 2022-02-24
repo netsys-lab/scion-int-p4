@@ -1,5 +1,9 @@
+*.cpp.o
+*.cpp.d
 build
 docs
 log
+simple_switch/control_plane/tests/tests
 telemetry/kafka/benchmark/benchmark
+telemetry/kafka/benchmark/test
 telemetry/kafka/example/example
