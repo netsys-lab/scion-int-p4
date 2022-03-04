@@ -2,6 +2,27 @@
 ## Helper functions ##
 ######################
 
+# Handle the arguments given to build and run command
+handle_arguments() {
+    if (( $# != 1 ))
+        then
+            echo "Usage: ./demo build [target]"
+            echo "  [target] has to be one of:" 
+            for i in "${USABLE_SWITCHES[@]}"; do echo "           - $i"; done
+            exit 1
+        fi
+    if [[ " ${USABLE_SWITCHES[*]} " =~ " $1 " ]]
+        then
+            SWITCH=$1
+        else
+            echo "Error: Unknown target."
+            echo "Usage: ./demo build [target]"
+            echo "  [target] has to be one of:" 
+            for i in "${USABLE_SWITCHES[@]}"; do echo "           - $i"; done
+            exit 1
+    fi
+}
+
 # Set the underlay IP and port of a SCION link.
 set_link_underlay() {
     local as_a=$1

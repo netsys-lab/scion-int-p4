@@ -1,10 +1,10 @@
 #!/bin/bash
 
 DOCKER_IMAGE=scion_host:latest
-SWITCH=l2_switch_grpc
 COMPOSE_ARGS="-f docker-compose-demo.yaml -p int-demo"
 export SCION_ROOT=${HOME}/scion
 export SCION_APPS=${HOME}/scion-apps
+USABLE_SWITCHES=(int_switch simple_switch_grpc)
 
 . helper.bash
 
@@ -13,6 +13,9 @@ export SCION_APPS=${HOME}/scion-apps
 ##############
 
 cmd_build() {
+    # Get used switch from argument
+    handle_arguments $@
+    
     # Build switch dataplane and controller
     make -C ../simple_switch/${SWITCH}
 
@@ -22,6 +25,9 @@ cmd_build() {
 }
 
 cmd_run() {
+    # Get used switch from argument
+    handle_arguments $@
+    
     if [[ "$(docker images -q ${DOCKER_IMAGE} 2> /dev/null)" == "" ]]; then
         cmd_build
     fi
