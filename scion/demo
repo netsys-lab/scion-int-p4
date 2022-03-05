@@ -14,7 +14,7 @@ USABLE_SWITCHES=(int_switch simple_switch_grpc)
 
 cmd_build() {
     # Get used switch from argument
-    handle_arguments $@
+    handle_arguments 'build' $@
     
     # Build switch dataplane and controller
     make -C ../simple_switch/${SWITCH}
@@ -26,7 +26,7 @@ cmd_build() {
 
 cmd_run() {
     # Get used switch from argument
-    handle_arguments $@
+    handle_arguments 'run' $@
     
     if [[ "$(docker images -q ${DOCKER_IMAGE} 2> /dev/null)" == "" ]]; then
         cmd_build
@@ -139,7 +139,7 @@ EOF
     sudo simple_switch_grpc --device-id 0 -i 0@veth0 -i 1@veth2 --thrift-port $thrift_port \
     --log-level info --log-file log/switch1 --log-flush --no-p4 -- \
     --grpc-server-addr localhost:$grpc_port > /dev/null &
-    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
+    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
     localhost:$grpc_port 0 1 > log/controller1 &
     # Switch 2
     local grpc_port=9560
@@ -147,7 +147,7 @@ EOF
     sudo simple_switch_grpc --device-id 0 -i 0@veth4 -i 1@veth6 --thrift-port $thrift_port \
     --log-level info --log-file log/switch2 --log-flush --no-p4 -- \
     --grpc-server-addr localhost:$grpc_port > /dev/null &
-    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
+    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
     localhost:$grpc_port 0 1 > log/controller2 &
     # Switch 3
     local grpc_port=9561
@@ -155,7 +155,7 @@ EOF
     sudo simple_switch_grpc --device-id 0 -i 0@veth8 -i 1@veth10 --thrift-port $thrift_port \
     --log-level info --log-file log/switch3 --log-flush --no-p4 -- \
     --grpc-server-addr localhost:$grpc_port > /dev/null &
-    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
+    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
     localhost:$grpc_port 0 1 > log/controller3 &
     # Switch 4
     local grpc_port=9562
@@ -163,7 +163,7 @@ EOF
     sudo simple_switch_grpc --device-id 0 -i 0@veth12 -i 1@veth14 --thrift-port $thrift_port \
     --log-level info --log-file log/switch4 --log-flush --no-p4 -- \
     --grpc-server-addr localhost:$grpc_port > /dev/null &
-    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
+    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
     localhost:$grpc_port 0 1 > log/controller4 &
     # Switch 5
     local grpc_port=9563
@@ -171,7 +171,7 @@ EOF
     sudo simple_switch_grpc --device-id 0 -i 0@veth16 -i 1@veth18 --thrift-port $thrift_port \
     --log-level info --log-file log/switch5 --log-flush --no-p4 -- \
     --grpc-server-addr localhost:$grpc_port > /dev/null &
-    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
+    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
     localhost:$grpc_port 0 1 > log/controller5 &
     # Switch 6
     local grpc_port=9564
@@ -179,7 +179,7 @@ EOF
     sudo simple_switch_grpc --device-id 0 -i 0@veth20 -i 1@veth22 --thrift-port $thrift_port \
     --log-level info --log-file log/switch6 --log-flush --no-p4 -- \
     --grpc-server-addr localhost:$grpc_port > /dev/null &
-    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
+    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
     localhost:$grpc_port 0 1 > log/controller6 &
 
     # Signal containers to start SCION

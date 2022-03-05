@@ -21,7 +21,7 @@ func main() {
 		"Produce the given number of events.")
 	flag.IntVar(&numFlows, "flows", 1,
 		"For producers: The number of flows for which to generate events.")
-	flag.StringVar(&bootstrapServer, "bootstrap-server", "localhost:9092",
+	flag.StringVar(&bootstrapServer, "bootstrap-server", "localhost:9093",
 		"Server to connect to.")
 	flag.Parse()
 

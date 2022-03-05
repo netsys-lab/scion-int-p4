@@ -4,19 +4,19 @@
 
 # Handle the arguments given to build and run command
 handle_arguments() {
-    if (( $# != 1 ))
+    if (( $# != 2 ))
         then
-            echo "Usage: ./demo build [target]"
+            echo "Usage: ./demo $1 [target]"
             echo "  [target] has to be one of:" 
             for i in "${USABLE_SWITCHES[@]}"; do echo "           - $i"; done
             exit 1
         fi
-    if [[ " ${USABLE_SWITCHES[*]} " =~ " $1 " ]]
+    if [[ " ${USABLE_SWITCHES[*]} " =~ " $2 " ]]
         then
-            SWITCH=$1
+            SWITCH=$2
         else
             echo "Error: Unknown target."
-            echo "Usage: ./demo build [target]"
+            echo "Usage: ./demo $1 [target]"
             echo "  [target] has to be one of:" 
             for i in "${USABLE_SWITCHES[@]}"; do echo "           - $i"; done
             exit 1
