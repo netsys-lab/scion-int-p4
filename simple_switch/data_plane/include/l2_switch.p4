@@ -1,3 +1,5 @@
+#ifndef __include_l2_switch__
+#define __include_l2_switch__
 
 control L2Switch(
     inout headers_t hdr,
@@ -66,3 +68,5 @@ control L2Switch(
         }
     }
 }
+
+#endif
