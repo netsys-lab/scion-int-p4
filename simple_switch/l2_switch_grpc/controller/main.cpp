@@ -10,7 +10,7 @@
 int main(int argc, char* argv[])
 {
     // TODO: Better command line parsing
-    if (argc != 6)
+    if (argc < 10 || argc > 11)
     {
         std::cout << "Usage: " << argv[0]
             << " <p4Info file> <config file> <switch address> <device id> <election id>\n";

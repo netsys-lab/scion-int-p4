@@ -6,8 +6,8 @@
 handle_arguments() {
     if (( $# != 2 ))
         then
-            echo "Usage: ./demo $1 [target]"
-            echo "  [target] has to be one of:" 
+            echo "Usage: ./demo $1 <target>"
+            echo "  <target> has to be one of:" 
             for i in "${USABLE_SWITCHES[@]}"; do echo "           - $i"; done
             exit 1
         fi
@@ -16,8 +16,8 @@ handle_arguments() {
             SWITCH=$2
         else
             echo "Error: Unknown target."
-            echo "Usage: ./demo $1 [target]"
-            echo "  [target] has to be one of:" 
+            echo "Usage: ./demo $1 <target>"
+            echo "  <target> has to be one of:" 
             for i in "${USABLE_SWITCHES[@]}"; do echo "           - $i"; done
             exit 1
     fi

@@ -46,7 +46,7 @@ func runConsumer(server string) {
 	defer c.Close()
 
 	// Subscribe to reports from all ASes
-	c.SubscribeTopics([]string{"ASff00_0_1-1", "ASff00_0_4-1"}, nil)
+	c.SubscribeTopics([]string{"ASff00_0_1-1", "ASff00_0_2-1", "ASff00_0_3-1", "ASff00_0_4-1", "ASff00_0_5-1", "ASff00_0_6-1", "ASff00_0_7-1"}, nil)
 
 	// Read reports and print them
 	for {
@@ -113,7 +113,12 @@ func runProducer(numEvents int, numFlows int, server string) {
 	// Paths
 	var topics = [...]string{
 		"ASff00_0_1-1",
+		"ASff00_0_2-1",
+		"ASff00_0_3-1",
 		"ASff00_0_4-1",
+		"ASff00_0_5-1",
+		"ASff00_0_6-1",
+		"ASff00_0_7-1",
 	}
 	var paths = [...][3]uint64{
 		{0xff00_0000_0001, 0xff00_0000_0002, 0xff00_0000_0004},

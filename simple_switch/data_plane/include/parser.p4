@@ -57,6 +57,7 @@ parser EthernetParser(
 #ifndef DISABLE_IPV6
 			EtherType.IPV6: ipv6;
 #endif /* DISABLE_IPV6 */
+    		default: accept;
 		}
 	}
 

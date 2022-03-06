@@ -4,7 +4,7 @@ DOCKER_IMAGE=scion_host:latest
 COMPOSE_ARGS="-f docker-compose-demo.yaml -p int-demo"
 export SCION_ROOT=${HOME}/scion
 export SCION_APPS=${HOME}/scion-apps
-USABLE_SWITCHES=(int_switch simple_switch_grpc)
+USABLE_SWITCHES=(int_switch l2_switch_grpc)
 
 . helper.bash
 
@@ -138,49 +138,49 @@ EOF
     local thrift_port=9190
     sudo simple_switch_grpc --device-id 0 -i 0@veth0 -i 1@veth2 --thrift-port $thrift_port \
     --log-level info --log-file log/switch1 --log-flush --no-p4 -- \
-    --grpc-server-addr localhost:$grpc_port > /dev/null &
+    --cpu-port 128 --grpc-server-addr localhost:$grpc_port > /dev/null &
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
-    localhost:$grpc_port 0 1 > log/controller1 &
+    localhost:$grpc_port 0 1 1-ff00:0:2 1 int_table1.txt 127.0.0.1:9093 > log/controller1 &
     # Switch 2
     local grpc_port=9560
     local thrift_port=9191
     sudo simple_switch_grpc --device-id 0 -i 0@veth4 -i 1@veth6 --thrift-port $thrift_port \
     --log-level info --log-file log/switch2 --log-flush --no-p4 -- \
-    --grpc-server-addr localhost:$grpc_port > /dev/null &
+    --cpu-port 128 --grpc-server-addr localhost:$grpc_port > /dev/null &
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
-    localhost:$grpc_port 0 1 > log/controller2 &
+    localhost:$grpc_port 0 1 1-ff00:0:3 1 int_table2.txt 127.0.0.1:9093 > log/controller2 &
     # Switch 3
     local grpc_port=9561
     local thrift_port=9192
     sudo simple_switch_grpc --device-id 0 -i 0@veth8 -i 1@veth10 --thrift-port $thrift_port \
     --log-level info --log-file log/switch3 --log-flush --no-p4 -- \
-    --grpc-server-addr localhost:$grpc_port > /dev/null &
+    --cpu-port 128 --grpc-server-addr localhost:$grpc_port > /dev/null &
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
-    localhost:$grpc_port 0 1 > log/controller3 &
+    localhost:$grpc_port 0 1 1-ff00:0:4 1 int_table3.txt 127.0.0.1:9093 > log/controller3 &
     # Switch 4
     local grpc_port=9562
     local thrift_port=9193
     sudo simple_switch_grpc --device-id 0 -i 0@veth12 -i 1@veth14 --thrift-port $thrift_port \
     --log-level info --log-file log/switch4 --log-flush --no-p4 -- \
-    --grpc-server-addr localhost:$grpc_port > /dev/null &
+    --cpu-port 128 --grpc-server-addr localhost:$grpc_port > /dev/null &
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
-    localhost:$grpc_port 0 1 > log/controller4 &
+    localhost:$grpc_port 0 1 1-ff00:0:5 1 int_table4.txt 127.0.0.1:9093 > log/controller4 &
     # Switch 5
     local grpc_port=9563
     local thrift_port=9194
     sudo simple_switch_grpc --device-id 0 -i 0@veth16 -i 1@veth18 --thrift-port $thrift_port \
     --log-level info --log-file log/switch5 --log-flush --no-p4 -- \
-    --grpc-server-addr localhost:$grpc_port > /dev/null &
+    --cpu-port 128 --grpc-server-addr localhost:$grpc_port > /dev/null &
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
-    localhost:$grpc_port 0 1 > log/controller5 &
+    localhost:$grpc_port 0 1 1-ff00:0:6 1 int_table5.txt 127.0.0.1:9093 > log/controller5 &
     # Switch 6
     local grpc_port=9564
     local thrift_port=9195
     sudo simple_switch_grpc --device-id 0 -i 0@veth20 -i 1@veth22 --thrift-port $thrift_port \
     --log-level info --log-file log/switch6 --log-flush --no-p4 -- \
-    --grpc-server-addr localhost:$grpc_port > /dev/null &
+    --cpu-port 128 --grpc-server-addr localhost:$grpc_port > /dev/null &
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
-    localhost:$grpc_port 0 1 > log/controller6 &
+    localhost:$grpc_port 0 1 1-ff00:0:7 1 int_table6.txt 127.0.0.1:9093 > log/controller6 &
 
     # Signal containers to start SCION
     echo '1' > $SCION_ROOT/gen/links_established
