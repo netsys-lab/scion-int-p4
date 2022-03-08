@@ -31,16 +31,15 @@ typedef boost::coroutines2::coroutine<std::chrono::milliseconds>  coroByteCnt_t;
 constexpr uint32_t NUM_SWITCH_PORTS = 8;
 
 // The IDs of actions and tables are set by @id annotations in the P4 source.
-constexpr uint32_t ACTION_NONE = 0x01020001;
-constexpr uint32_t ACTION_INSERT_INT = 0x01020005;
-constexpr uint32_t ACTION_INSERT_NODE_ID = 0x01020007;
-constexpr uint32_t ACTION_INSERT_TX_UTIL = 0x01020008;
-constexpr uint32_t ACTION_INSERT_AS_ADDR = 0x01020009;
-constexpr uint32_t ACTION_CLONE_INT = 0x01020006;
-constexpr uint32_t TABLE_SCION_INT = 0x02020003;
-constexpr uint32_t TABLE_INT_NODE_ID = 0x02020004;
-constexpr uint32_t TABLE_INT_TX_UTIL = 0x02020005;
-constexpr uint32_t TABLE_INT_AS_ADDR = 0x02020006;
+constexpr uint32_t ACTION_INSERT_INT = 0x01002001;
+constexpr uint32_t ACTION_CLONE_INT = 0x01002002;
+constexpr uint32_t ACTION_INSERT_NODE_ID = 0x01002003;
+constexpr uint32_t ACTION_INSERT_TX_UTIL = 0x01002004;
+constexpr uint32_t ACTION_INSERT_AS_ADDR = 0x01002005;
+constexpr uint32_t TABLE_SCION_INT = 0x02002001;
+constexpr uint32_t TABLE_INT_NODE_ID = 0x02002002;
+constexpr uint32_t TABLE_INT_TX_UTIL = 0x02002003;
+constexpr uint32_t TABLE_INT_AS_ADDR = 0x02002004;
 
 // The ID of the tc byte counter is read from the P4Info message.
 static const char* COUNTER_TX_BYTE_NAME = "txCounter";
@@ -114,7 +113,6 @@ void IntController::handleArbitrationUpdate(
 
 bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn& packetIn)
 {
-    std::cout << "moin" << std::endl;
     auto payload = packetIn.payload().c_str();
     auto payloadLen = packetIn.payload().length();
     uint32_t pos = 0;

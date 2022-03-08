@@ -19,13 +19,8 @@ control INTSwitchIngress(
     inout metadata_t meta,
     inout standard_metadata_t std_meta)
 {
-    @id(0x01020001)
-    @brief("Do nothing.")
-    action no_action() {
-    }
-    
     // Action for INT-source
-    @id(0x01020005)
+    @id(0x01002001)
     @brief("Insert INT header.")
     action insert_int(instruction_bitmap_t instructionBits, domain_bitmap_t domainBits) {
         // Set headers valid
@@ -115,7 +110,7 @@ control INTSwitchIngress(
         meta.intState = 1;
     }
     
-    @id(0x01020006)
+    @id(0x01002002)
     @brief("Clone packet to delete INT header.")
     action clone_int() {
         meta.intState = 0;
@@ -124,7 +119,7 @@ control INTSwitchIngress(
     }
 
     // Table searches for UDP over SCION packages to insert INT header
-    @id(0x02020003)
+    @id(0x02002001)
     @brief("Checks for SCION UDP messages.")
     table scion_int {
         key = {
@@ -134,9 +129,9 @@ control INTSwitchIngress(
         actions = {
             insert_int;
             clone_int;
-            no_action;
+            NoAction;
         }
-        default_action = no_action();
+        default_action = NoAction();
     }
 
     apply {
@@ -160,15 +155,11 @@ control INTSwitchEgress(
     inout metadata_t meta,
     inout standard_metadata_t std_meta)
 {
-    // Do nothing.
-    action no_action() {
-    }
-    
     action update_tx_counter() {
         txCounter.count((bit<32>)std_meta.egress_port);
     }
 
-    @id(0x01020007)
+    @id(0x01002003)
     @brief("Add nodeID to INT stack")
     action insert_int_node_id(bit<32> nodeID) {
         meta.addLen = meta.addLen + 0x04;
@@ -191,7 +182,7 @@ control INTSwitchEgress(
     }
     
     // Add egress link tx utilization to INT stack
-    @id(0x01020008)
+    @id(0x01002004)
     @brief("Insert Tx link utilization into INT stack.")
     action insert_int_eg_if_util(bit<32> txUtil) {
         meta.addLen = meta.addLen + 0x04;
@@ -199,7 +190,7 @@ control INTSwitchEgress(
         hdr.int_stack.egressIFUtilization.egressIFUtil = txUtil;
     }
     
-    @id(0x01020009)
+    @id(0x01002005)
     @brief("Add Scion AS addr to INT stack")
     action insert_sci_as_addr(bit<64> asAddr) {
         meta.addLen = meta.addLen + 0x08;
@@ -280,7 +271,7 @@ control INTSwitchEgress(
 	    hdr.payload.setInvalid();
     }
     
-    @id(0x02020004)
+    @id(0x02002002)
     @brief("Check if node ID has to be added to INT stack.")
     table int_node_id_table {
         key = {
@@ -288,9 +279,9 @@ control INTSwitchEgress(
         }
         actions = {
             insert_int_node_id;
-            no_action;
+            NoAction;
         }
-        default_action = no_action();
+        default_action = NoAction();
     }
     
     // Table checks if ingress timestamp has to be added to INT stack
@@ -300,9 +291,9 @@ control INTSwitchEgress(
         }
         actions = {
             insert_int_ig_timestamp;
-            no_action;
+            NoAction;
         }
-        default_action = no_action();
+        default_action = NoAction();
         const entries = {
             1 : insert_int_ig_timestamp();
         }
@@ -315,16 +306,16 @@ control INTSwitchEgress(
         }
         actions = {
             insert_int_eg_timestamp;
-            no_action;
+            NoAction;
         }
-        default_action = no_action();
+        default_action = NoAction();
         const entries = {
             1 : insert_int_eg_timestamp();
         }
     }
     
     // Table checks if egress interface tx utilization has to be added to INT stack
-    @id(0x02020005)
+    @id(0x02002003)
     @brief("Check if Tx link utilization has to be added to INT stack.")
     table int_eg_if_util_table {
         key = {
@@ -333,12 +324,12 @@ control INTSwitchEgress(
         }
         actions = {
             insert_int_eg_if_util;
-            no_action;
+            NoAction;
         }
-        default_action = no_action();
+        default_action = NoAction();
     }
     
-    @id(0x02020006)
+    @id(0x02002004)
     @brief("Check if Scion AS address has to be added to INT stack.")
     table sci_as_addr_table {
         key = {
@@ -346,9 +337,9 @@ control INTSwitchEgress(
         }
         actions = {
             insert_sci_as_addr;
-            no_action;
+            NoAction;
         }
-        default_action = no_action();
+        default_action = NoAction();
     }
     
     // Table checks if the length fields of underlying headers need to be refreshed
@@ -358,9 +349,9 @@ control INTSwitchEgress(
         }
         actions = {
             int_refresh_length;
-            no_action;
+            NoAction;
         }
-        default_action = no_action();
+        default_action = NoAction();
         const entries = {
             1: int_refresh_length();
         }
