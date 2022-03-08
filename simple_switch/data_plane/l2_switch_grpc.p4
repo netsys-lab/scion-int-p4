@@ -12,15 +12,10 @@
 // Headers //
 /////////////
 
+#include "headers/common.p4"
+
 typedef bit<9> ingressPort_t;
 typedef bit<9> egressPort_t;
-typedef bit<48> macAddr_t;
-
-header ethernet_h {
-    macAddr_t dstAddr;
-    macAddr_t srcAddr;
-    bit<16> type;
-}
 
 struct headers_t {
     ethernet_h ethernet;

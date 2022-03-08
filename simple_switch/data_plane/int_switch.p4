@@ -24,14 +24,13 @@
 #include <core.p4>
 #include <v1model.p4>
 
-#include "headers/common.p4"
-#include "headers/scion.p4"
-#include "headers/int.p4"
-
-
 /////////////
 // Headers //
 /////////////
+
+#include "headers/common.p4"
+#include "headers/scion.p4"
+#include "headers/int.p4"
 
 typedef bit<9> ingressPort_t;
 typedef bit<9> egressPort_t;
