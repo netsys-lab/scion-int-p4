@@ -151,7 +151,7 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
     auto bitmaskScion = takeUint16(payload, (uint32_t) (pos + hdrLen - 4));
     
     // Check, if payload's length is a multiple of the lengths of the defined INT fields
-    auto intStackSize = takeUint8(payload, (uint32_t) (pos + hdrLen - 12 - 3)) - 12;
+    auto intStackSize = takeUint8(payload, (uint32_t) (pos + hdrLen - 12 - 3)) - 3;
     auto intHopSize = takeUint8(payload, (uint32_t) (pos + hdrLen - 10)) % (1 << 5);
     if ((intStackSize % intHopSize) != 0) {
         std::cout << "ERROR: Received INT stack with invalid length!" << std::endl;

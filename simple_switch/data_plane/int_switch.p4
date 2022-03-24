@@ -1,6 +1,6 @@
 #define DISABLE_IPV6
 
-// INT Values
+// INT Definitions
 #define NUM_INTER_HOPS 10
 #define SPACE_FOR_HOPS 2080 //NUM_INTER_HOPS*416
 #define UDP_PORT 12345

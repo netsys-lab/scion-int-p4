@@ -30,7 +30,7 @@ control INTSwitchIngress(
         hdr.int_shim.type = Type.MD;
         hdr.int_shim.npt = 0x01;
         hdr.int_shim.r = 0x00;
-        hdr.int_shim.length = 0x0c;
+        hdr.int_shim.length = 0x03;
         hdr.int_shim.udpPort = hdr.udp_scion.dstPort;
         // Set udp port to signal following INT shim header
         hdr.udp_scion.dstPort = UDP_PORT;

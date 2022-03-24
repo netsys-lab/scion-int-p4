@@ -413,14 +413,14 @@ parser IntParser(
 	    
 	    meta.cpuHdrLen = meta.cpuHdrLen + 12;
 	    
-	    transition select(int_md.remainingHopCount) {
-	        NUM_INTER_HOPS + 1: accept;
+	    transition select(int_shim.length) {
+	        0x03: accept;
 	        default: int_stack_state;
 	    }
 	}
 	
 	state int_stack_state {
-	    meta.intStackLen = (bit<32>)int_md.hopML * 32 * (NUM_INTER_HOPS - (bit<32>)int_md.remainingHopCount + 1);
+	    meta.intStackLen = ((bit<32>)int_shim.length - 0x03) * 32;
 	    packet.extract(int_stack.pre_int_stack, meta.intStackLen);
 
 	    meta.intNodeID = 0;
