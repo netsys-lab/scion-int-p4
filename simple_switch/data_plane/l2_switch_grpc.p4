@@ -24,13 +24,6 @@ struct headers_t {
 struct metadata_t {
 }
 
-
-struct macLearnMsg_t
-{
-    macAddr_t srcAddr;
-    ingressPort_t ingressPort;
-};
-
 #include "include/l2_switch.p4"
 
 

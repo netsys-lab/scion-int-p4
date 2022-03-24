@@ -89,17 +89,128 @@ struct metadata_t {
     bit<1>  sciAsAddr;
 }
 
-
-struct macLearnMsg_t
-{
-    macAddr_t srcAddr;
-    ingressPort_t ingressPort;
-};
-
 #include "include/parser.p4"
 #include "include/l2_switch.p4"
 #include "include/int_switch.p4"
 
+
+////////////
+// Parser //
+////////////
+
+parser IntSwitchParser(
+    packet_in packet,
+    out headers_t hdr,
+    inout metadata_t meta,
+    inout standard_metadata_t std_meta)
+{
+    EthernetParser() ethernetParser;
+#ifndef DISABLE_IPV4
+    IPv4Parser() ipv4Parser;
+#endif /* DISABLE_IPV4 */
+#ifndef DISABLE_IPV6
+    IPv6Parser() ipv6Parser;
+#endif /* DISABLE_IPV6 */
+    UDPParser() udpParser;
+    ScionCommonParser() scionCommonParser;
+    ScionAdressParser() scionAddressParser;
+    ScionPathParser() scionPathParser;
+    IntParser() intParser;
+    
+    state start {
+		ethernetParser.apply(packet, hdr.ethernet);
+		
+		transition select(hdr.ethernet.etherType) {
+#ifndef DISABLE_IPV4
+			EtherType.IPV4: ipv4;
+#endif /* DISABLE_IPV4 */
+#ifndef DISABLE_IPV6
+			EtherType.IPV6: ipv6;
+#endif /* DISABLE_IPV6 */
+    		default: accept;
+		}
+	}
+
+#ifndef DISABLE_IPV4
+	state ipv4 {
+		ipv4Parser.apply(packet, hdr.ipv4);
+		transition select(hdr.ipv4.protocol) {
+    		Proto.UDP: udp;
+    		default: accept;
+		}
+	}
+#endif /* DISABLE_IPV4 */
+
+#ifndef DISABLE_IPV6
+	state ipv6 {
+		ipv6Parser.apply(packet, hdr.ipv6);
+		transition select(hdr.ipv6.nextHdr) {
+    		Proto.UDP: udp;
+    		default: accept;
+		}
+	}
+#endif /* DISABLE_IPV6 */
+
+    state udp {
+        udpParser.apply(packet, hdr.udp);
+        transition select(hdr.udp.dstPort) {
+            50000: scion;
+            default: accept;
+        }
+    }
+
+	state scion {
+		scionCommonParser.apply(packet, hdr.scion_common);
+		
+		meta.cpuHdrLen = 12;
+		
+		scionAddressParser.apply(packet, hdr.scion_common, hdr.scion_addr_common,
+		    hdr.scion_addr_dst_host_32, hdr.scion_addr_dst_host_32_2,
+		    hdr.scion_addr_dst_host_32_3, hdr.scion_addr_dst_host_128,
+		    hdr.scion_addr_src_host_32, hdr.scion_addr_src_host_32_2,
+		    hdr.scion_addr_src_host_32_3, hdr.scion_addr_src_host_128, meta);
+	    
+	    transition path;
+    }
+
+	state path {
+	    scionPathParser.apply(packet, hdr.scion_common, hdr.scion_path_meta,
+            hdr.scion_info_field_0, hdr.scion_info_field_1, hdr.scion_info_field_2,
+            hdr.scion_hop_fields, meta);
+        
+        transition select(hdr.scion_common.nextHdr) {
+		    NextHdr.UDP_SCION: udp_scion_state;
+		    default: accept;
+		}
+	}	
+	
+	state udp_scion_state {
+	    udpParser.apply(packet, hdr.udp_scion);
+	    
+	    meta.cpuHdrLen = meta.cpuHdrLen + 8;
+	    
+	    transition select(hdr.udp_scion.dstPort) {
+	        UDP_PORT: int_shim;
+	        default: accept;
+	    }
+	}
+	
+	state int_shim {
+	    intParser.apply(packet, hdr.int_shim, hdr.int_md, hdr.int_stack, meta);
+        
+        transition select (hdr.int_stack.pre_int_stack.isValid()) {
+            true: get_payload;
+            default: accept;
+        }
+    }
+
+	state get_payload {
+	    bit<32> payloadLen = (bit<32>)hdr.scion_common.payloadLen * 8 - 192 - meta.intStackLen;
+	    packet.extract(hdr.payload, payloadLen - (payloadLen % 8));
+
+        transition accept;
+	}
+}
 
 ///////////////////////////
 // Checksum Verification //
@@ -342,7 +453,7 @@ control MyDeparser(packet_out packet, in headers_t hdr)
 @pkginfo(name="int_switch")
 @pkginfo(version="0.1")
 V1Switch(
-    EthernetParser(),
+    IntSwitchParser(),
     MyVerifyChecksum(),
     MyIngress(),
     MyEgress(),

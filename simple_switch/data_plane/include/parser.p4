@@ -42,64 +42,87 @@
 // Parser //
 ////////////
 
+// Parser for ethernet header
 parser EthernetParser(
     packet_in packet,
-    out headers_t hdr,
-    inout metadata_t meta,
-    inout standard_metadata_t std_meta)
+    out ethernet_h ethernet)
 {
     state start {
-		packet.extract(hdr.ethernet);
-		transition select(hdr.ethernet.etherType) {
+		packet.extract(ethernet);
+		transition accept;
+	}
+}
+
+// Parser for ipv4
 #ifndef DISABLE_IPV4
-			EtherType.IPV4: ipv4;
-#endif /* DISABLE_IPV4 */
-#ifndef DISABLE_IPV6
-			EtherType.IPV6: ipv6;
-#endif /* DISABLE_IPV6 */
-    		default: accept;
-		}
-	}
-
-#ifndef DISABLE_IPV4
-	state ipv4 {
-		packet.extract(hdr.ipv4);
-		transition select(hdr.ipv4.protocol) {
-    		Proto.UDP: udp;
-    		default: accept;
-		}
-	}
-#endif /* DISABLE_IPV4 */
-
-#ifndef DISABLE_IPV6
-	state ipv6 {
-		packet.extract(hdr.ipv6);
-		transition select(hdr.ipv6.nextHdr) {
-    		Proto.UDP: udp;
-    		default: accept;
-		}
-	}
-#endif /* DISABLE_IPV6 */
-
-    state udp {
-        packet.extract(hdr.udp);
-        transition select(hdr.udp.dstPort) {
-            50000: scion;
-            default: accept;
-        }
+parser IPv4Parser(
+    packet_in packet,
+    out ipv4_h ipv4)
+{
+    state start {
+        packet.extract(ipv4);
+        transition accept;
     }
+}
+#endif /* DISABLE_IPV4 */
 
-	state scion {
-		packet.extract(hdr.scion_common);
-		
-		meta.cpuHdrLen = 12;
-		
-		packet.extract(hdr.scion_addr_common);
+// Parser for ipv6
+#ifndef DISABLE_IPV6
+parser IPv6Parser(
+    packet_in packet,
+    out ipv6_h ipv6)
+{
+    state start {
+        packet.extract(ipv6);
+        transition accept;
+    }
+}
+#endif /* DISABLE_IPV6 */
+
+// Parser for udp header
+parser UDPParser(
+    packet_in packet,
+    out udp_h udp)
+{
+    state start {
+		packet.extract(udp);
+		transition accept;
+	}
+}
+
+// Parser for SCION common header
+parser ScionCommonParser(
+    packet_in packet,
+    out scion_common_h scion_common)
+{
+    state start {
+		packet.extract(scion_common);
+		transition accept;
+	}
+}
+
+// Parser for SCION address header
+parser ScionAdressParser(
+    packet_in packet,
+    in scion_common_h scion_common,
+    out scion_addr_common_h scion_addr_common,
+	out scion_addr_host_32_h scion_addr_dst_host_32,
+	out scion_addr_host_32_h scion_addr_dst_host_32_2,
+	out scion_addr_host_32_h scion_addr_dst_host_32_3,
+	out scion_addr_host_128_h scion_addr_dst_host_128,
+	out scion_addr_host_32_h scion_addr_src_host_32,
+	out scion_addr_host_32_h scion_addr_src_host_32_2,
+	out scion_addr_host_32_h scion_addr_src_host_32_3,
+	out scion_addr_host_128_h scion_addr_src_host_128,
+	inout metadata_t meta)
+{
+    state start {
+        packet.extract(scion_addr_common);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 16;
 		
 
-		transition select(hdr.scion_common.dl, hdr.scion_common.sl) {
+		transition select(scion_common.dl, scion_common.sl) {
 			(0, 0): addr_dst_src_host_32_32;
 			(0, 1): addr_dst_src_host_32_64;
 			(0, 2): addr_dst_src_host_32_96;
@@ -121,174 +144,186 @@ parser EthernetParser(
 	}
 
 	state addr_dst_src_host_32_32 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_src_host_32);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_src_host_32);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 8;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_32_64 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_src_host_32);
-		packet.extract(hdr.scion_addr_src_host_32_2);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_src_host_32);
+		packet.extract(scion_addr_src_host_32_2);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 12;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_32_96 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_src_host_32);
-		packet.extract(hdr.scion_addr_src_host_32_2);
-		packet.extract(hdr.scion_addr_src_host_32_3);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_src_host_32);
+		packet.extract(scion_addr_src_host_32_2);
+		packet.extract(scion_addr_src_host_32_3);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 16;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_32_128 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_src_host_128);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_src_host_128);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 20;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_64_32 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_dst_host_32_2);
-		packet.extract(hdr.scion_addr_src_host_32);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_dst_host_32_2);
+		packet.extract(scion_addr_src_host_32);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 12;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_64_64 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_dst_host_32_2);
-		packet.extract(hdr.scion_addr_src_host_32);
-		packet.extract(hdr.scion_addr_src_host_32_2);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_dst_host_32_2);
+		packet.extract(scion_addr_src_host_32);
+		packet.extract(scion_addr_src_host_32_2);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 16;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_64_96 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_dst_host_32_2);
-		packet.extract(hdr.scion_addr_src_host_32);
-		packet.extract(hdr.scion_addr_src_host_32_2);
-		packet.extract(hdr.scion_addr_src_host_32_3);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_dst_host_32_2);
+		packet.extract(scion_addr_src_host_32);
+		packet.extract(scion_addr_src_host_32_2);
+		packet.extract(scion_addr_src_host_32_3);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 20;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_64_128 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_dst_host_32_2);
-		packet.extract(hdr.scion_addr_src_host_128);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_dst_host_32_2);
+		packet.extract(scion_addr_src_host_128);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 24;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_96_32 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_dst_host_32_2);
-		packet.extract(hdr.scion_addr_dst_host_32_3);
-		packet.extract(hdr.scion_addr_src_host_32);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_dst_host_32_2);
+		packet.extract(scion_addr_dst_host_32_3);
+		packet.extract(scion_addr_src_host_32);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 16;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_96_64 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_dst_host_32_2);
-		packet.extract(hdr.scion_addr_dst_host_32_3);
-		packet.extract(hdr.scion_addr_src_host_32);
-		packet.extract(hdr.scion_addr_src_host_32_2);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_dst_host_32_2);
+		packet.extract(scion_addr_dst_host_32_3);
+		packet.extract(scion_addr_src_host_32);
+		packet.extract(scion_addr_src_host_32_2);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 20;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_96_96 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_dst_host_32_2);
-		packet.extract(hdr.scion_addr_dst_host_32_3);
-		packet.extract(hdr.scion_addr_src_host_32);
-		packet.extract(hdr.scion_addr_src_host_32_2);
-		packet.extract(hdr.scion_addr_src_host_32_3);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_dst_host_32_2);
+		packet.extract(scion_addr_dst_host_32_3);
+		packet.extract(scion_addr_src_host_32);
+		packet.extract(scion_addr_src_host_32_2);
+		packet.extract(scion_addr_src_host_32_3);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 24;
 	
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_96_128 {
-		packet.extract(hdr.scion_addr_dst_host_32);
-		packet.extract(hdr.scion_addr_dst_host_32_2);
-		packet.extract(hdr.scion_addr_dst_host_32_3);
-		packet.extract(hdr.scion_addr_src_host_128);
+		packet.extract(scion_addr_dst_host_32);
+		packet.extract(scion_addr_dst_host_32_2);
+		packet.extract(scion_addr_dst_host_32_3);
+		packet.extract(scion_addr_src_host_128);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 28;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_128_32 {
-		packet.extract(hdr.scion_addr_dst_host_128);
-		packet.extract(hdr.scion_addr_src_host_32);
+		packet.extract(scion_addr_dst_host_128);
+		packet.extract(scion_addr_src_host_32);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 20;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_128_64 {
-		packet.extract(hdr.scion_addr_dst_host_128);
-		packet.extract(hdr.scion_addr_src_host_32);
-		packet.extract(hdr.scion_addr_src_host_32_2);
+		packet.extract(scion_addr_dst_host_128);
+		packet.extract(scion_addr_src_host_32);
+		packet.extract(scion_addr_src_host_32_2);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 24;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_128_96 {
-		packet.extract(hdr.scion_addr_dst_host_128);
-		packet.extract(hdr.scion_addr_src_host_32);
-		packet.extract(hdr.scion_addr_src_host_32_2);
-		packet.extract(hdr.scion_addr_src_host_32_3);
+		packet.extract(scion_addr_dst_host_128);
+		packet.extract(scion_addr_src_host_32);
+		packet.extract(scion_addr_src_host_32_2);
+		packet.extract(scion_addr_src_host_32_3);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 28;
 
-		transition path;
+		transition accept;
 	}
 
 	state addr_dst_src_host_128_128 {
-		packet.extract(hdr.scion_addr_dst_host_128);
-		packet.extract(hdr.scion_addr_src_host_128);
+		packet.extract(scion_addr_dst_host_128);
+		packet.extract(scion_addr_src_host_128);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 32;
-		transition path;
+		transition accept;
 	}
+}
 
-	state path {
-		transition select(hdr.scion_common.pathType) {
+// Parser for SCION path header
+parser ScionPathParser(
+    packet_in packet,
+    in scion_common_h scion_common,
+    out scion_path_meta_h scion_path_meta,
+	out scion_info_field_h scion_info_field_0,
+	out scion_info_field_h scion_info_field_1,
+	out scion_info_field_h scion_info_field_2,
+	out scion_hop_field_h scion_hop_fields,
+	inout metadata_t meta)
+{
+    state start {
+        transition select(scion_common.pathType) {
 			PathType.SCION: path_scion;
 			PathType.ONEHOP: path_onehop;
 			// Other path types are not supported
@@ -296,24 +331,21 @@ parser EthernetParser(
 	}
 
 	state path_onehop {
-		packet.extract(hdr.scion_info_field_0);
-		packet.extract(hdr.scion_hop_fields, 192);
+		packet.extract(scion_info_field_0);
+		packet.extract(scion_hop_fields, 192);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 32;
 	
-		transition select(hdr.scion_common.nextHdr) {
-		    NextHdr.UDP_SCION: udp_scion_state;
-		    default: accept;
-		}
+		transition accept;
 	}
 
 	state path_scion {
-		packet.extract(hdr.scion_path_meta);
+		packet.extract(scion_path_meta);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 4;
 		
 		// We assume there is at least one info field present
-		transition select(hdr.scion_path_meta.seg1Len, hdr.scion_path_meta.seg2Len) {
+		transition select(scion_path_meta.seg1Len, scion_path_meta.seg2Len) {
 			(0, 0): info_field_0;
 			(_, 0): info_field_1;
 			default: info_field_2;
@@ -321,7 +353,7 @@ parser EthernetParser(
 	}
 
 	state info_field_0 {
-		packet.extract(hdr.scion_info_field_0);
+		packet.extract(scion_info_field_0);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 8;
 
@@ -329,8 +361,8 @@ parser EthernetParser(
 	}
 
 	state info_field_1 {
-		packet.extract(hdr.scion_info_field_0);
-		packet.extract(hdr.scion_info_field_1);
+		packet.extract(scion_info_field_0);
+		packet.extract(scion_info_field_1);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 16;
 
@@ -338,9 +370,9 @@ parser EthernetParser(
 	}
 
 	state info_field_2 {
-		packet.extract(hdr.scion_info_field_0);
-		packet.extract(hdr.scion_info_field_1);
-		packet.extract(hdr.scion_info_field_2);
+		packet.extract(scion_info_field_0);
+		packet.extract(scion_info_field_1);
+		packet.extract(scion_info_field_2);
 		
 		meta.cpuHdrLen = meta.cpuHdrLen + 24;
 
@@ -348,53 +380,48 @@ parser EthernetParser(
 	}
 
 	state hop_fields {
-	    bit<32> hopLen = ((bit<32>)hdr.scion_path_meta.seg2Len + (bit<32>)hdr.scion_path_meta.seg1Len + (bit<32>)hdr.scion_path_meta.seg0Len) * 96;
-	    packet.extract(hdr.scion_hop_fields, hopLen);
+	    bit<32> hopLen = ((bit<32>)scion_path_meta.seg2Len + (bit<32>)scion_path_meta.seg1Len + (bit<32>)scion_path_meta.seg0Len) * 96;
+	    packet.extract(scion_hop_fields, hopLen);
 	    
 	    meta.cpuHdrLen = meta.cpuHdrLen + ((bit<64>)hopLen / 8);
 		
-		transition select(hdr.scion_common.nextHdr) {
-		    NextHdr.UDP_SCION: udp_scion_state;
-		    default: accept;
-		}
+		transition accept;
 	}
-	
-	state udp_scion_state {
-	    packet.extract(hdr.udp_scion);
-	    
-	    meta.cpuHdrLen = meta.cpuHdrLen + 8;
-	    
-	    transition select(hdr.udp_scion.dstPort) {
-	        UDP_PORT: int_shim;
-	        default: accept;
-	    }
-	}
-	
-	state int_shim {
-	    packet.extract(hdr.int_shim);
-	    
+}
+
+// Parser for INT Shim and MD header + Stack
+parser IntParser(
+    packet_in packet,
+    out int_shim_h int_shim,
+    out int_md_h int_md,
+	out int_stack_t int_stack,
+    inout metadata_t meta)
+{
+    state start {
+		packet.extract(int_shim);
+
 	    meta.cpuHdrLen = meta.cpuHdrLen + 4;
 	    
-	    transition select(hdr.int_shim.type) {
-	        Type.MD: int_md;
+	    transition select(int_shim.type) {
+	        Type.MD: int_md_state;
 	        default: accept;
 	    }
 	}
 	
-	state int_md {
-	    packet.extract(hdr.int_md);
+	state int_md_state {
+	    packet.extract(int_md);
 	    
 	    meta.cpuHdrLen = meta.cpuHdrLen + 12;
 	    
-	    transition select(hdr.int_md.remainingHopCount) {
+	    transition select(int_md.remainingHopCount) {
 	        NUM_INTER_HOPS + 1: accept;
-	        default: int_stack;
+	        default: int_stack_state;
 	    }
 	}
 	
-	state int_stack {
-	    meta.intStackLen = (bit<32>)hdr.int_md.hopML * 32 * (NUM_INTER_HOPS - (bit<32>)hdr.int_md.remainingHopCount + 1);
-	    packet.extract(hdr.int_stack.pre_int_stack, meta.intStackLen);
+	state int_stack_state {
+	    meta.intStackLen = (bit<32>)int_md.hopML * 32 * (NUM_INTER_HOPS - (bit<32>)int_md.remainingHopCount + 1);
+	    packet.extract(int_stack.pre_int_stack, meta.intStackLen);
 
 	    meta.intNodeID = 0;
 	    meta.intL1IfID = 0;
@@ -407,14 +434,7 @@ parser EthernetParser(
 	    meta.intBufferInfos = 0;
 	    meta.intChksumCompl = 0;
 	    meta.sciAsAddr = 0;
-	    transition get_payload;
-	}
-	
-	state get_payload {
-	    bit<32> payloadLen = (bit<32>)hdr.scion_common.payloadLen * 8 - 192 - meta.intStackLen;
-	    packet.extract(hdr.payload, payloadLen - (payloadLen % 8));
-
-        transition accept;
+	    transition accept;
 	}
 }
 

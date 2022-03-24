@@ -3,6 +3,14 @@
 
 #include "general.p4"
 
+struct macLearnMsg_t
+{
+    macAddr_t srcAddr;
+    ingressPort_t ingressPort;
+};
+
+
+
 control L2Switch(
     inout headers_t hdr,
     inout metadata_t meta,
