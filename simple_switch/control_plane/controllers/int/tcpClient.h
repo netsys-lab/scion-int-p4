@@ -19,5 +19,4 @@ class tcpClient
         tcp::endpoint ep;
         std::unique_ptr<tcp::socket> tcpSocket;
         uint8_t isActive;
-        boost::system::error_code err;
 };

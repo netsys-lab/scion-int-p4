@@ -22,6 +22,7 @@ tcpClient::tcpClient(const std::string& tcpAddress) : isActive(0)
             std::getline(tcpAddrStr, tcpPortStr, ':');
             uint16_t tcpPort = std::stoi(tcpPortStr);
             
+            boost::system::error_code err;
             auto addr = boost::asio::ip::make_address(tcpAddr, err);
             if (err)
                 throw boost::system::system_error(err);
@@ -62,6 +63,7 @@ void tcpClient::write(const void* data, size_t size)
     {
         try
         {
+            boost::system::error_code err;
             boost::asio::write(*tcpSocket, boost::asio::buffer(data, size), err);
             // Error handling if write fails
             // If connection was closed...
@@ -94,6 +96,7 @@ void tcpClient::write(const std::string& data)
     {
         try
         {
+            boost::system::error_code err;
             boost::asio::write(*tcpSocket, boost::asio::buffer(data), err);
             // Error handling if write fails
             // If connection was closed...
