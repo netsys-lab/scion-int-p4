@@ -30,9 +30,6 @@
 #include "headers/scion.p4"
 #include "headers/int.p4"
 
-typedef bit<9> ingressPort_t;
-typedef bit<9> egressPort_t;
-
 struct headers_t {
     ethernet_h		ethernet;
 #ifndef DISABLE_IPV4
@@ -87,7 +84,13 @@ struct metadata_t {
     bit<1>  sciAsAddr;
 }
 
-#include "include/parser.p4"
+#include "parser/ethernetParser.p4"
+#include "parser/ipv4Parser.p4"
+#include "parser/ipv6Parser.p4"
+#include "parser/udpParser.p4"
+#include "parser/scionParser.p4"
+#include "parser/intParser.p4"
+
 #include "include/l2_switch.p4"
 #include "include/int_switch.p4"
 

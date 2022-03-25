@@ -14,9 +14,6 @@
 
 #include "headers/common.p4"
 
-typedef bit<9> ingressPort_t;
-typedef bit<9> egressPort_t;
-
 struct headers_t {
     ethernet_h ethernet;
 }
@@ -24,6 +21,7 @@ struct headers_t {
 struct metadata_t {
 }
 
+#include "parser/ethernetParser.p4"
 #include "include/l2_switch.p4"
 
 
@@ -31,18 +29,19 @@ struct metadata_t {
 // Parser //
 ////////////
 
-parser EthernetParser(
+parser EthernetSwitchParser(
     packet_in packet,
     out headers_t hdr,
     inout metadata_t meta,
     inout standard_metadata_t std_meta)
 {
+    EthernetParser() ethernetParser;
     state start {
         transition parse_ethernet;
     }
 
     state parse_ethernet {
-        packet.extract(hdr.ethernet);
+        ethernetParser.apply(packet, hdr.ethernet);
         transition accept;
     }
 }
@@ -116,7 +115,7 @@ control MyDeparser(packet_out packet, in headers_t hdr)
 @pkginfo(name="learning_ethernet_switch")
 @pkginfo(version="0.1")
 V1Switch(
-    EthernetParser(),
+    EthernetSwitchParser(),
     MyVerifyChecksum(),
     MyIngress(),
     MyEgress(),

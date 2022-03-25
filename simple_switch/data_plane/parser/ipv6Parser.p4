@@ -1,7 +1,8 @@
-#ifndef __include_common__
-#define __include_common__
+#ifndef __parser_ipv6Parser__
+#define __parser_ipv6Parser__
 
-// Copy from SIDN/p4-scion repository
+// Edited from SIDN/p4-scion repository
+
 /* 
  * Copyright (c) 2021, SIDN Labs
  * All rights reserved.
@@ -31,59 +32,25 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-typedef bit<9> ingressPort_t;
-typedef bit<9> egressPort_t;
 
-typedef bit<48> macAddr_t;
 
-enum bit<16> EtherType {
-  IPV4 = 0x0800,
-  IPV6 = 0x86dd,
-  test = 0x0000
+#include "../headers/common.p4"
+
+////////////
+// Parser //
+////////////
+
+// Parser for ipv6
+#ifndef DISABLE_IPV6
+parser IPv6Parser(
+    packet_in packet,
+    out ipv6_h ipv6)
+{
+    state start {
+        packet.extract(ipv6);
+        transition accept;
+    }
 }
-
-enum bit<8> Proto {
-  UDP = 0x11
-}
-
-header ethernet_h {
-    macAddr_t dstAddr;
-    macAddr_t srcAddr;
-    EtherType etherType;
-}
-
-header ipv4_h {
-    bit<4>    version;
-    bit<4>    ihl;
-    bit<8>    diffserv;
-    bit<16>   totalLen;
-    bit<16>   identification;
-    bit<3>    flags;
-    bit<13>   fragOffset;
-    bit<8>    ttl;
-    Proto     protocol;
-    bit<16>   hdrChecksum;
-    bit<32>   srcAddr;
-    bit<32>   dstAddr;
-}
-
-header ipv6_h {
-    bit<4>    version;
-    bit<8>    trafficClass;
-    bit<20>   flowLabel;
-    bit<16>   payloadLen;
-    Proto     nextHdr;
-    bit<8>    hopLimit;
-    bit<128>  srcAddr;
-    bit<128>  dstAddr;
-}
-
-header udp_h {
-    bit<16>   srcPort;
-    bit<16>   dstPort;
-    bit<16>   len;
-    bit<16>   checksum;
-}
+#endif /* DISABLE_IPV6 */
 
 #endif
