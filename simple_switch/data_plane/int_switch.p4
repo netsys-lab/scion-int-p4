@@ -1,10 +1,12 @@
 #define DISABLE_IPV6
 
 // INT Definitions
-#define NUM_INTER_HOPS 10
-#define SPACE_FOR_HOPS 2080 //NUM_INTER_HOPS*416
-#define UDP_PORT 12345
+#define NUM_INTER_HOPS 10   // Maximum number of allowed transit hops
+#define SPACE_FOR_HOPS 2080 // NUM_INTER_HOPS*416
+#define UDP_PORT 12345      // UDP destination port used to signalize the presence of INT
+#define SCION_DOMAIN_ID 0x0001  // SCION-specific domain ID used in INT
 
+// Checks for defined values
 #if !defined(NUM_INTER_HOPS)
 #error "A maximum number of intermediate hops has to be defined as NUM_INTER_HOPS!"
 #endif
@@ -15,10 +17,6 @@
 
 #if defined DISABLE_IPV4 && defined DISABLE_IPV6
 #error "Disabling both IPv4 and IPv6 support is not supported"
-#endif
-
-#if !defined(DISABLE_IPV4) && !defined(DISABLE_IPV6)
-#error "Enabling both IPv4 and IPv6 support is not supported"
 #endif
 
 #include <core.p4>

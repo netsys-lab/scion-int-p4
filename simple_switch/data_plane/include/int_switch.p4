@@ -47,7 +47,7 @@ control INTSwitchIngress(
         {
             hdr.int_md.domainID = 0x0000;
         } else {
-            hdr.int_md.domainID = 0x0001;  // Using domain ID 1 for SCION
+            hdr.int_md.domainID = SCION_DOMAIN_ID;
         }
         hdr.int_md.domainInstructions = domainBits;
         hdr.int_md.domainFlags = 0x0000;
