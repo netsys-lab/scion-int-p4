@@ -171,31 +171,31 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
         auto metadata = newHop->mutable_metadata();
         
         // Check for all possible INT data fields and write them into metadata
-        if ((bitmaskInt & (1 << 15)) == (1 << 15)) // NODE_ID
+        if (bitmaskInt & (1 << 15)) // NODE_ID
         {
             uint32_t readNodeID = takeUint32(payload, pos);
             pos += 4;
             newHop->set_node_id(readNodeID);
         }
-        if ((bitmaskInt & (1 << 14)) == (1 << 14)) // INT_L1_IF_ID
+        if (bitmaskInt & (1 << 14)) // INT_L1_IF_ID
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::INTERFACE_LEVEL1].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if ((bitmaskInt & (1 << 13)) == (1 << 13)) // INT_HOP_LATENCY
+        if (bitmaskInt & (1 << 13)) // INT_HOP_LATENCY
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::HOP_LATENCY].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if ((bitmaskInt & (1 << 12)) == (1 << 12)) // INT_QUEUE
+        if (bitmaskInt & (1 << 12)) // INT_QUEUE
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::QUEUE_OCCUPANCY].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if ((bitmaskInt & (1 << 11)) == (1 << 11)) // INT_IG_TIME
+        if (bitmaskInt & (1 << 11)) // INT_IG_TIME
         {
             auto ingressTimestamp = takeUint64(payload, pos) * 1000;
             pos += 8;
@@ -205,7 +205,7 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
                 (*metadata)[telemetry::report::INGRESS_TIMESTAMP].push_back(*(reinterpret_cast<char*>(&ingressTimestamp) + i));
             }
         }
-        if ((bitmaskInt & (1 << 10)) == (1 << 10)) // INT_EG_TIME
+        if (bitmaskInt & (1 << 10)) // INT_EG_TIME
         {
             auto egressTimestamp = takeUint64(payload, pos) * 1000;
             pos += 8;
@@ -215,25 +215,25 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
                 (*metadata)[telemetry::report::EGRESS_TIMESTAMP].push_back(*(reinterpret_cast<char*>(&egressTimestamp) + i));
             }
         }
-        if ((bitmaskInt & (1 << 9)) == (1 << 9)) // INT_L2_IF_ID
+        if (bitmaskInt & (1 << 9)) // INT_L2_IF_ID
         {
             for (int j = 0; j < 8; j++)
                 (*metadata)[telemetry::report::INTERFACE_LEVEL2].push_back(*(payload + pos + j));
             pos += 8;
         }
-        if ((bitmaskInt & (1 << 8)) == (1 << 8)) // INT_EG_IF_UTIL
+        if (bitmaskInt & (1 << 8)) // INT_EG_IF_UTIL
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::EGRESS_TX_UTILIZATION].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if ((bitmaskInt & (1 << 7)) == (1 << 7)) // INT_BUFFER_INFOS
+        if (bitmaskInt & (1 << 7)) // INT_BUFFER_INFOS
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::BUFFER_OCCUPANCY].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if ((bitmaskScion & 1 ) == 1 ) // AS_ADDR
+        if (bitmaskScion & 1) // AS_ADDR
         {
             uint64_t readAS = takeUint64(payload, pos);
             pos += 8;
