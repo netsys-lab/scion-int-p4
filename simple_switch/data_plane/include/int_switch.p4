@@ -225,7 +225,7 @@ control INTSwitchEgress(
         // Reset UDP destination port
         hdr.udp_scion.dstPort = hdr.int_shim.udpPort;
         // Update length-fields
-        bit<16> subLen = 0x10 + (bit<16>)hdr.int_md.hopML * 4 * (NUM_INTER_HOPS + 1 - (bit<16>)hdr.int_md.remainingHopCount);
+        bit<16> subLen = 0x04 + (bit<32>)int_shim.length * 4;
         hdr.udp_scion.len = hdr.udp_scion.len - subLen;
         hdr.scion_common.payloadLen = hdr.scion_common.payloadLen - subLen;
         hdr.udp.len = hdr.udp.len - subLen;
