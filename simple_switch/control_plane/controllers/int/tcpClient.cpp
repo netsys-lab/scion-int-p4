@@ -6,10 +6,11 @@
 
 using boost::asio::ip::tcp;
 
-// Create TCP client
+// Create TCP client object
 tcpClient::tcpClient() : isActive(false)
 {}
 
+// Create a TCP client and instantiate a connection
 bool tcpClient::createClient(const tcp::endpoint& ep)
 {
     boost::asio::io_context io_context;
@@ -25,7 +26,14 @@ bool tcpClient::createClient(const tcp::endpoint& ep)
     return isActive;
 }
 
-void tcpClient::send(const std::string& report)
+// Get TCP client state
+bool tcpClient::getIsActive()
+{
+    return isActive;
+}
+
+// Send a string
+bool tcpClient::send(const std::string& report)
 {
     if (isActive)
     {
@@ -33,70 +41,31 @@ void tcpClient::send(const std::string& report)
         write(&len, sizeof(uint32_t));
         write(report);
     }
+    return isActive;
 }
 
-void tcpClient::write(const void* data, size_t size)
+// Helper to send const void data
+bool tcpClient::write(const void* data, size_t size)
 {
     if (isActive)
     {
-        try
+        boost::system::error_code err;
+        boost::asio::write(*tcpSocket, boost::asio::buffer(data, size), err);
+        // Error handling if write fails
+        // If error close connection and set inactive
+        if (err)
         {
-            boost::system::error_code err;
-            boost::asio::write(*tcpSocket, boost::asio::buffer(data, size), err);
-            // Error handling if write fails
-            // If connection was closed...
-            if (err == boost::asio::error::broken_pipe
-                || err == boost::asio::error::connection_reset
-                || err == boost::asio::error::connection_refused
-                || err == boost::asio::error::bad_descriptor)
-            {
-                std::cout << "Info: TCP connection was closed." << std::endl;
-                tcpSocket->close();
-                isActive = 0;
-            }
-            // ...else
-            else if (err)
-            {
-                isActive = 0;
-                throw boost::system::system_error(err);
-            }
-        }
-        catch (std::exception& e)
-        {
-            std::cout << "TCP Error: " << e.what() << std::endl;
+            std::cout << "TCP Error: " << err.message() << std::endl;
+            tcpSocket->close();
+            isActive = false;
         }
     }
+    return isActive;
 }
 
-void tcpClient::write(const std::string& data)
+// Helper to send a string
+bool tcpClient::write(const std::string& data)
 {
-    if (isActive)
-    {
-        try
-        {
-            boost::system::error_code err;
-            boost::asio::write(*tcpSocket, boost::asio::buffer(data), err);
-            // Error handling if write fails
-            // If connection was closed...
-            if (err == boost::asio::error::broken_pipe
-                || err == boost::asio::error::connection_reset
-                || err == boost::asio::error::connection_refused
-                || err == boost::asio::error::bad_descriptor)
-            {
-                std::cout << "Info: TCP connection was closed." << std::endl;
-                tcpSocket->close();
-                isActive = 0;
-            }
-            // ...else
-            else if (err)
-            {
-                isActive = 0;
-                throw boost::system::system_error(err);
-            }
-        }
-        catch (std::exception& e)
-        {
-            std::cout << "TCP Error: " << e.what() << std::endl;
-        }
-    }
+    write(data.c_str(), data.length());
+    return isActive;
 }

@@ -10,11 +10,14 @@ class tcpClient
         // Methods: 
         tcpClient();
         bool createClient(const tcp::endpoint& ep);
-        void send(const std::string& report);
+        bool send(const std::string& report);
+        
+        // Getter:
+        bool getIsActive();
     private:
         // Methods:
-        void write(const void* data, size_t size);
-        void write(const std::string& data);
+        bool write(const void* data, size_t size);
+        bool write(const std::string& data);
         
         // Attributes:
         std::unique_ptr<tcp::socket> tcpSocket;
