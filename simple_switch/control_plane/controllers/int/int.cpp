@@ -46,6 +46,7 @@ static const char* COUNTER_TX_BYTE_NAME = "txCounter";
 
 // Forward declarations
 static void readIntTable(std::string& intTablePath, std::vector<uint64_t>& asList, std::vector<uint16_t>& bitmaskIntList, std::vector<uint16_t>& bitmaskScionList);
+static void splitAddress(std::string& address, std::string& ipAddress, uint16_t& port);
 static std::unique_ptr<p4::v1::Entity> buildScionIntTableEntry(isdAddr isd, asAddr as, uint16_t bitmaskInt, uint16_t bitmaskScion, uint32_t defAction);
 static std::unique_ptr<p4::v1::Entity> buildSciAsAddrTableEntry(asAddr as);
 static std::unique_ptr<p4::v1::Entity> buildIntNodeIdTableEntry(nodeID_t nodeID);
@@ -96,18 +97,16 @@ IntController::IntController(SwitchConnection& con, const p4::config::v1::P4Info
     // Create tcpSocket
     if (tcpAddress.length() > 0)
     {
-        std::stringstream tcpAddrStr(tcpAddress);
-        std::string tcpAddr;
-        std::string tcpPortStr;
-        std::getline(tcpAddrStr, tcpAddr, ':');
-        std::getline(tcpAddrStr, tcpPortStr, ':');
-        uint16_t tcpPort = std::stoi(tcpPortStr);
+        std::string ipAddr;
+        uint16_t port;
+        splitAddress(tcpAddress, ipAddr, port);
         
         boost::system::error_code err;
-        auto addr = boost::asio::ip::make_address(tcpAddr, err);
+        auto addr = boost::asio::ip::make_address(ipAddr, err);
         if (err)
             throw boost::system::system_error(err);
-        tcp::endpoint ep(addr, tcpPort);
+        tcp::endpoint ep(addr, port);
+        std::cout << "Try to connect to TCP server on " << ipAddr << ":" << port << "..." << std::endl;
         tcpSocket.createClient(ep);
     }
             
@@ -375,6 +374,22 @@ static void readIntTable(std::string& intTablePath,
     }
    
     intTable.close();
+}
+
+/// \brief Split a string "ip.address:port" into address and port.
+/// \param[in] address The original address string.
+/// \param[out] ipAddress The IP address as string.
+/// \param[out] port The port as uint16.
+static void splitAddress(std::string& address, std::string& ipAddress, uint16_t& port)
+{
+    if (address.length() > 0)
+    {
+        std::stringstream addrStr(address);
+        std::string portStr;
+        std::getline(addrStr, ipAddress, ':');
+        std::getline(addrStr, portStr, ':');
+        port = std::stoi(portStr);
+    }
 }
 
 /// \brief Build a configuration message describing an entry in the Scion INT table to insert an INT header.
