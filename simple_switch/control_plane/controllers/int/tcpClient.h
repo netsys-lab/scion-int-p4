@@ -8,7 +8,8 @@ class tcpClient
 {
     public:
         // Methods: 
-        tcpClient(const std::string& tcpAddress);
+        tcpClient();
+        bool createClient(const tcp::endpoint& ep);
         void send(const std::string& report);
     private:
         // Methods:
@@ -16,7 +17,6 @@ class tcpClient
         void write(const std::string& data);
         
         // Attributes:
-        tcp::endpoint ep;
         std::unique_ptr<tcp::socket> tcpSocket;
-        uint8_t isActive;
+        bool isActive;
 };

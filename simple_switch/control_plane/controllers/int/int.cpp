@@ -64,7 +64,6 @@ IntController::IntController(SwitchConnection& con, const p4::config::v1::P4Info
     , counterTxId(0)
     , nodeID(nodeId)
     , kafkaProd(kafkaAddress)
-    , tcpSocket(tcpAddress)
 {
     // Get counter IDs by their names
     for (const auto& counter : p4Info.counters())
@@ -92,6 +91,24 @@ IntController::IntController(SwitchConnection& con, const p4::config::v1::P4Info
     while (std::getline(hostASStream, hostASNamePart, ':'))
     {
         hostAS = (hostAS << 16) + std::stoull("0x" + hostASNamePart, nullptr, 16);
+    }
+    
+    // Create tcpSocket
+    if (tcpAddress.length() > 0)
+    {
+        std::stringstream tcpAddrStr(tcpAddress);
+        std::string tcpAddr;
+        std::string tcpPortStr;
+        std::getline(tcpAddrStr, tcpAddr, ':');
+        std::getline(tcpAddrStr, tcpPortStr, ':');
+        uint16_t tcpPort = std::stoi(tcpPortStr);
+        
+        boost::system::error_code err;
+        auto addr = boost::asio::ip::make_address(tcpAddr, err);
+        if (err)
+            throw boost::system::system_error(err);
+        tcp::endpoint ep(addr, tcpPort);
+        tcpSocket.createClient(ep);
     }
             
     // Read table from given file

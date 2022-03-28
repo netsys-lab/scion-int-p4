@@ -7,44 +7,22 @@
 using boost::asio::ip::tcp;
 
 // Create TCP client
-tcpClient::tcpClient(const std::string& tcpAddress) : isActive(0)
+tcpClient::tcpClient() : isActive(false)
+{}
+
+bool tcpClient::createClient(const tcp::endpoint& ep)
 {
-    if (tcpAddress.length() > 0)
-    {
-        try
-        {
-            boost::asio::io_context io_context;
-            
-            std::stringstream tcpAddrStr(tcpAddress);
-            std::string tcpAddr;
-            std::string tcpPortStr;
-            std::getline(tcpAddrStr, tcpAddr, ':');
-            std::getline(tcpAddrStr, tcpPortStr, ':');
-            uint16_t tcpPort = std::stoi(tcpPortStr);
-            
-            boost::system::error_code err;
-            auto addr = boost::asio::ip::make_address(tcpAddr, err);
-            if (err)
-                throw boost::system::system_error(err);
-            ep = tcp::endpoint(addr, tcpPort);
-            
-            tcpSocket = std::make_unique<tcp::socket>(io_context);
-            tcpSocket->connect(ep, err);
-            // Check, if the connection could be established
-            if (err == boost::asio::error::broken_pipe || err == boost::asio::error::connection_refused)
-            {
-                std::cout << "Info: Could not connect to TCP server on port " << tcpPort << ". TCP server is not used." << std::endl;
-            }
-            else if (err)
-                throw boost::system::system_error(err);
-            else
-                isActive = 1;
-        }
-        catch (std::exception& e)
-        {
-            std::cout << "TCP Error: " << e.what() << std::endl;
-        }
-    }
+    boost::asio::io_context io_context;
+    boost::system::error_code err;
+    
+    tcpSocket = std::make_unique<tcp::socket>(io_context);
+    tcpSocket->connect(ep, err);
+    // Check, if the connection could be established
+    if (err)
+        std::cout << "Error: Could not connect to TCP server: " << err.message() << std::endl << "TCP server is not used." << std::endl;
+    else
+        isActive = true;
+    return isActive;
 }
 
 void tcpClient::send(const std::string& report)
