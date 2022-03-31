@@ -140,7 +140,7 @@ EOF
     --log-level info --log-file log/switch1 --log-flush --no-p4 -- \
     --cpu-port 128 --grpc-server-addr localhost:$grpc_port > /dev/null &
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
-    localhost:$grpc_port 0 1 1-ff00:0:2 1 int_table1.txt 127.0.0.1:9093 127.0.0.1:9898 > log/controller1 &
+    localhost:$grpc_port 0 1 1-ff00:0:2 1 int_table1.txt 127.0.0.1:9093 > log/controller1 &
     # Switch 2
     local grpc_port=9560
     local thrift_port=9191
@@ -148,7 +148,7 @@ EOF
     --log-level info --log-file log/switch2 --log-flush --no-p4 -- \
     --cpu-port 128 --grpc-server-addr localhost:$grpc_port > /dev/null &
     $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
-    localhost:$grpc_port 0 1 1-ff00:0:3 1 int_table2.txt 127.0.0.1:9093 127.0.0.1:9898 > log/controller2 &
+    localhost:$grpc_port 0 1 1-ff00:0:3 1 int_table2.txt 127.0.0.1:9093 > log/controller2 &
     # Switch 3
     local grpc_port=9561
     local thrift_port=9192

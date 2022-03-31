@@ -5,6 +5,9 @@
 #include "tcpClient.h"
 #include "commonInt.h"
 #include "bitstring.h"
+#include "takeUint.h"
+#include "addressConversion.h"
+#include "readIntTable.h"
 
 #include <p4/v1/p4runtime.pb.h>
 #include <p4/v1/p4runtime.grpc.pb.h>

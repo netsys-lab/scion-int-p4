@@ -41,22 +41,15 @@ constexpr uint32_t TABLE_INT_NODE_ID = 0x02002002;
 constexpr uint32_t TABLE_INT_TX_UTIL = 0x02002003;
 constexpr uint32_t TABLE_INT_AS_ADDR = 0x02002004;
 
-// The ID of the tc byte counter is read from the P4Info message.
-static const char* COUNTER_TX_BYTE_NAME = "txCounter";
-
 // Forward declarations
-static void readIntTable(std::string& intTablePath, std::vector<uint64_t>& asList, std::vector<uint16_t>& bitmaskIntList, std::vector<uint16_t>& bitmaskScionList);
-static void splitIpAddress(std::string& address, std::string& ipAddress, uint16_t& port);
-static void splitScionAddress(std::string& address, uint16_t& isdAddress, uint64_t& asAddress);
 static std::unique_ptr<p4::v1::Entity> buildScionIntTableEntry(isdAddr isd, asAddr as, uint16_t bitmaskInt, uint16_t bitmaskScion, uint32_t defAction);
 static std::unique_ptr<p4::v1::Entity> buildSciAsAddrTableEntry(asAddr as);
 static std::unique_ptr<p4::v1::Entity> buildIntNodeIdTableEntry(nodeID_t nodeID);
 static std::unique_ptr<p4::v1::Entity> buildIntTxUtilTableEntry(Port port, LinkUtil txCount);
 static std::unique_ptr<p4::v1::Entity> buildCloneSessionEntry(uint32_t sessionId);
-static uint64_t takeUint64(const char* payload, uint32_t pos);
-static uint32_t takeUint32(const char* payload, uint32_t pos);
-static uint16_t takeUint16(const char* payload, uint32_t pos);
-static uint8_t takeUint8(const char* payload, uint32_t pos);
+
+// The ID of the tc byte counter is read from the P4Info message.
+static const char* COUNTER_TX_BYTE_NAME = "txCounter";
 
 
 IntController::IntController(SwitchConnection& con, const p4::config::v1::P4Info &p4Info_,
@@ -333,78 +326,6 @@ bool IntController::configCloneSession(SwitchConnection &con)
     return con.sendWriteRequest(request);
 }
 
-static void readIntTable(std::string& intTablePath,
-                  std::vector<uint64_t>& asList,
-                  std::vector<uint16_t>& bitmaskIntList,
-                  std::vector<uint16_t>& bitmaskScionList)
-{
-    // Get table with bitmasks from file
-    std::ifstream intTable;
-    
-    intTable.open(intTablePath, std::ios::in);
-    if (!intTable.is_open())
-        throw std::runtime_error(
-            std::string("ERROR: Failed to open int_table.txt"));
-    
-    // Write configuration defined in the file into lists
-    std::string line;
-    while (std::getline(intTable, line))
-    {
-        // Check that line is no comment
-        if (line[0] != '#')
-        {
-            std::istringstream lineStr(line);
-            std::string asName;
-            uint16_t bitmaskInt;
-            uint16_t bitmaskScion;
-            lineStr >> asName >> std::hex >> bitmaskInt >> bitmaskScion;
-            uint16_t isdAddr = 0;
-            uint64_t asAddr = 0;
-            splitScionAddress(asName, isdAddr, asAddr);
-            asAddr = ((uint64_t)isdAddr << 48) + asAddr;
-            asList.push_back(asAddr);
-            bitmaskIntList.push_back(bitmaskInt);
-            bitmaskScionList.push_back(bitmaskScion);
-        }
-    }
-   
-    intTable.close();
-}
-
-/// \brief Split a string "ip.address:port" into address and port.
-/// \param[in] address The original address string.
-/// \param[out] ipAddress The IP address as string.
-/// \param[out] port The port as uint16.
-static void splitIpAddress(std::string& address, std::string& ipAddress, uint16_t& port)
-{
-    if (address.length() > 0)
-    {
-        std::stringstream addrStr(address);
-        std::string portStr;
-        std::getline(addrStr, ipAddress, ':');
-        std::getline(addrStr, portStr, ':');
-        port = std::stoi(portStr);
-    }
-}
-
-/// \brief Split a string "isdAddress-AS:Address" into ISD address and AS address.
-/// \param[in] address The original SCION address string.
-/// \param[out] isdAddress The ISD address as uint16.
-/// \param[out] asAddress The AS address as uint16.
-static void splitScionAddress(std::string& address, uint16_t& isdAddress, uint64_t& asAddress)
-{
-    std::string addressNamePart;
-    std::stringstream addressStream(address);
-    std::getline(addressStream, addressNamePart, '-');
-    isdAddress = std::stoi("0x" + addressNamePart, nullptr, 16);
-    // Get address of AS the switch belongs to
-    asAddress = 0;
-    while (std::getline(addressStream, addressNamePart, ':'))
-    {
-        asAddress = (asAddress << 16) + std::stoull("0x" + addressNamePart, nullptr, 16);
-    }
-}
-
 /// \brief Build a configuration message describing an entry in the Scion INT table to insert an INT header.
 /// \param[in] isd Destination ISD of the INT flow to be defined.
 /// \param[in] as Destination AS of the INT flow to be defined.
@@ -551,45 +472,4 @@ static std::unique_ptr<p4::v1::Entity> buildCloneSessionEntry(uint32_t id)
     cloneSession->set_packet_length_bytes(0);
 
     return entity;
-}
-
-static uint64_t takeUint64(const char* payload, uint32_t pos)
-{
-        // Data is transferred in big-endian format, but saved in little-endian format
-        uint64_t number;
-        for (int i = 0; i < 8; i ++)
-        {
-            *(reinterpret_cast<char*>(&number) + i) = *(payload + pos + 7 - i);
-        }
-        return number;
-}
-
-static uint32_t takeUint32(const char* payload, uint32_t pos)
-{
-        // Data is transferred in big-endian format, but saved in little-endian format
-        uint32_t number;
-        for (int i = 0; i < 4; i ++)
-        {
-            *(reinterpret_cast<char*>(&number) + i) = *(payload + pos + 3 - i);
-        }
-        return number;
-}
-
-static uint16_t takeUint16(const char* payload, uint32_t pos)
-{
-        // Data is transferred in big-endian format, but saved in little-endian format
-        uint16_t number;
-        for (int i = 0; i < 2; i ++)
-        {
-            *(reinterpret_cast<char*>(&number) + i) = *(payload + pos + 1 - i);
-        }
-        return number;
-}
-
-static uint8_t takeUint8(const char* payload, uint32_t pos)
-{
-        // Data is transferred in big-endian format, but saved in little-endian format
-        uint8_t number;
-        *(reinterpret_cast<char*>(&number)) = *(payload + pos);
-        return number;
 }
