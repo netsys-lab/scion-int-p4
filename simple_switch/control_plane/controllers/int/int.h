@@ -51,8 +51,8 @@ private:
     uint16_t hostISD;
     std::vector<uint32_t> txCountList;
     std::vector<uint64_t> asList;
-    std::vector<uint16_t> bitmaskIntList;
-    std::vector<uint16_t> bitmaskScionList;
+    std::vector<uint16_t> bitmapIntList;
+    std::vector<uint16_t> bitmapScionList;
     kafkaProducer kafkaProd;  // Used for Kafka topics output
     tcpClient tcpSocket;      // Used for output over tcp port
 };

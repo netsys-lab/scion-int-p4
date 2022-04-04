@@ -42,7 +42,7 @@ constexpr uint32_t TABLE_INT_TX_UTIL = 0x02002003;
 constexpr uint32_t TABLE_INT_AS_ADDR = 0x02002004;
 
 // Forward declarations
-static std::unique_ptr<p4::v1::Entity> buildScionIntTableEntry(isdAddr isd, asAddr as, uint16_t bitmaskInt, uint16_t bitmaskScion, uint32_t defAction);
+static std::unique_ptr<p4::v1::Entity> buildScionIntTableEntry(isdAddr isd, asAddr as, uint16_t bitmapInt, uint16_t bitmapScion, uint32_t defAction);
 static std::unique_ptr<p4::v1::Entity> buildSciAsAddrTableEntry(asAddr as);
 static std::unique_ptr<p4::v1::Entity> buildIntNodeIdTableEntry(nodeID_t nodeID);
 static std::unique_ptr<p4::v1::Entity> buildIntTxUtilTableEntry(Port port, LinkUtil txCount);
@@ -102,7 +102,7 @@ IntController::IntController(SwitchConnection& con, const p4::config::v1::P4Info
     }
             
     // Read table from given file
-    readIntTable(intTablePath, asList, bitmaskIntList, bitmaskScionList);
+    readIntTable(intTablePath, asList, bitmapIntList, bitmapScionList);
     
     // Initialize txCount memory
     txCountList = std::vector<uint32_t>(512, 0);
@@ -153,9 +153,9 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
     // Get destintaion ISD and AS address from int_cpu header at the front of the payload
     auto asAddr = takeUint64(payload, (uint32_t) pos + 12);
     
-    // Get the index of AS in the input table and read the according bitmask
-    auto bitmaskInt = takeUint16(payload, (uint32_t) (pos + hdrLen - 8));
-    auto bitmaskScion = takeUint16(payload, (uint32_t) (pos + hdrLen - 4));
+    // Get the index of AS in the input table and read the according bitmap
+    auto bitmapInt = takeUint16(payload, (uint32_t) (pos + hdrLen - 8));
+    auto bitmapScion = takeUint16(payload, (uint32_t) (pos + hdrLen - 4));
     
     // Check, if payload's length is a multiple of the lengths of the defined INT fields
     auto intStackSize = takeUint8(payload, (uint32_t) (pos + hdrLen - 12 - 3)) - 3;
@@ -178,31 +178,31 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
         auto metadata = newHop->mutable_metadata();
         
         // Check for all possible INT data fields and write them into metadata
-        if (bitmaskInt & (1 << 15)) // NODE_ID
+        if (bitmapInt & (1 << 15)) // NODE_ID
         {
             uint32_t readNodeID = takeUint32(payload, pos);
             pos += 4;
             newHop->set_node_id(readNodeID);
         }
-        if (bitmaskInt & (1 << 14)) // INT_L1_IF_ID
+        if (bitmapInt & (1 << 14)) // INT_L1_IF_ID
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::INTERFACE_LEVEL1].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if (bitmaskInt & (1 << 13)) // INT_HOP_LATENCY
+        if (bitmapInt & (1 << 13)) // INT_HOP_LATENCY
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::HOP_LATENCY].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if (bitmaskInt & (1 << 12)) // INT_QUEUE
+        if (bitmapInt & (1 << 12)) // INT_QUEUE
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::QUEUE_OCCUPANCY].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if (bitmaskInt & (1 << 11)) // INT_IG_TIME
+        if (bitmapInt & (1 << 11)) // INT_IG_TIME
         {
             auto ingressTimestamp = takeUint64(payload, pos) * 1000;
             pos += 8;
@@ -212,7 +212,7 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
                 (*metadata)[telemetry::report::INGRESS_TIMESTAMP].push_back(*(reinterpret_cast<char*>(&ingressTimestamp) + i));
             }
         }
-        if (bitmaskInt & (1 << 10)) // INT_EG_TIME
+        if (bitmapInt & (1 << 10)) // INT_EG_TIME
         {
             auto egressTimestamp = takeUint64(payload, pos) * 1000;
             pos += 8;
@@ -222,25 +222,25 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
                 (*metadata)[telemetry::report::EGRESS_TIMESTAMP].push_back(*(reinterpret_cast<char*>(&egressTimestamp) + i));
             }
         }
-        if (bitmaskInt & (1 << 9)) // INT_L2_IF_ID
+        if (bitmapInt & (1 << 9)) // INT_L2_IF_ID
         {
             for (int j = 0; j < 8; j++)
                 (*metadata)[telemetry::report::INTERFACE_LEVEL2].push_back(*(payload + pos + j));
             pos += 8;
         }
-        if (bitmaskInt & (1 << 8)) // INT_EG_IF_UTIL
+        if (bitmapInt & (1 << 8)) // INT_EG_IF_UTIL
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::EGRESS_TX_UTILIZATION].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if (bitmaskInt & (1 << 7)) // INT_BUFFER_INFOS
+        if (bitmapInt & (1 << 7)) // INT_BUFFER_INFOS
         {
             for (int j = 0; j < 4; j++)
                 (*metadata)[telemetry::report::BUFFER_OCCUPANCY].push_back(*(payload + pos + j));
             pos += 4;
         }
-        if (bitmaskScion & 1) // AS_ADDR
+        if (bitmapScion & 1) // AS_ADDR
         {
             uint64_t readAS = takeUint64(payload, pos);
             pos += 8;
@@ -292,14 +292,14 @@ bool IntController::installStaticTableEntries(SwitchConnection &con)
     for (int i = 0; i < asList.size(); i++)
     {
         request = con.createWriteRequest();
-        std::cout << "Write INT-Bitmask " << std::hex << bitmaskIntList[i] << " for AS " << (asList[i] >> 48) << "-" << (asList[i] & 0xffffffffffff) << std::endl;
-        std::cout << "Write SCION-specific Bitmask " << std::hex << bitmaskScionList[i] << " for AS " << (asList[i] >> 48) << "-" << (asList[i] & 0xffffffffffff) << std::endl;
+        std::cout << "Write INT-Bitmap " << std::hex << bitmapIntList[i] << " for AS " << (asList[i] >> 48) << "-" << (asList[i] & 0xffffffffffff) << std::endl;
+        std::cout << "Write SCION-specific Bitmap " << std::hex << bitmapScionList[i] << " for AS " << (asList[i] >> 48) << "-" << (asList[i] & 0xffffffffffff) << std::endl;
         if (!(asList[i] >> 48 == hostISD && (asList[i] & 0xffffffffffff) == hostAS))
             request.addUpdate(p4::v1::Update::INSERT, buildScionIntTableEntry(
                 (asList[i] >> 48),
                 (asList[i] & 0xffffffffffff),
-                bitmaskIntList[i],
-                bitmaskScionList[i],
+                bitmapIntList[i],
+                bitmapScionList[i],
                 ACTION_INSERT_INT
             ));
         con.sendWriteRequest(request);
@@ -329,10 +329,10 @@ bool IntController::configCloneSession(SwitchConnection &con)
 /// \brief Build a configuration message describing an entry in the Scion INT table to insert an INT header.
 /// \param[in] isd Destination ISD of the INT flow to be defined.
 /// \param[in] as Destination AS of the INT flow to be defined.
-/// \param[in] bitmaskInt INT bitmask of the INT flow to be defined.
-/// \param[in] bitmaskScion Domain specific bitmask for SCION of the INT flow to be defined.
+/// \param[in] bitmapInt INT bitmap of the INT flow to be defined.
+/// \param[in] bitmapScion Domain specific bitmap for SCION of the INT flow to be defined.
 /// \param[in] defAction Defines, whether INT headers have to be inserted or deleted.
-static std::unique_ptr<p4::v1::Entity> buildScionIntTableEntry(isdAddr isd, asAddr as, uint16_t bitmaskInt, uint16_t bitmaskScion, uint32_t defAction)
+static std::unique_ptr<p4::v1::Entity> buildScionIntTableEntry(isdAddr isd, asAddr as, uint16_t bitmapInt, uint16_t bitmapScion, uint32_t defAction)
 {
     auto entity = std::make_unique<p4::v1::Entity>();
 
@@ -359,10 +359,10 @@ static std::unique_ptr<p4::v1::Entity> buildScionIntTableEntry(isdAddr isd, asAd
         action->set_action_id(ACTION_INSERT_INT);
         auto param = action->add_params();
         param->set_param_id(1);
-        toBitstring<sizeof(uint16_t)>(bitmaskInt, *param->mutable_value());
+        toBitstring<sizeof(uint16_t)>(bitmapInt, *param->mutable_value());
         param = action->add_params();
         param->set_param_id(2);
-        toBitstring<sizeof(uint16_t)>(bitmaskScion, *param->mutable_value());
+        toBitstring<sizeof(uint16_t)>(bitmapScion, *param->mutable_value());
     } else if (defAction == ACTION_CLONE_INT) {
         // Action
         auto action = entry->mutable_action()->mutable_action();

@@ -70,7 +70,7 @@ struct metadata_t {
     @field_list(1)
     bit<64> cpuHdrLen;
     bit<16> addLen;
-    // Remember the set bitmask fields
+    // Remember the set bitmap fields
     bit<1>  intNodeID;
     bit<1>  intL1IfID;
     bit<1>  intHopLatency;
