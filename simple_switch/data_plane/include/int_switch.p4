@@ -252,6 +252,7 @@ control INTSwitchEgress(
     action keep_int_cpu() {
         // Set int_cpu valid to store length of SCION and INT headers
         hdr.int_cpu.setValid();
+        hdr.int_cpu.identifier = INT_IDENTIFIER;
         hdr.int_cpu.cpuHdrLen = meta.cpuHdrLen;
         // Set payload and all headers before SCION invalid to minimize packet size
 	    hdr.ethernet.setInvalid();

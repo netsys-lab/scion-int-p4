@@ -5,6 +5,7 @@
 #define SPACE_FOR_HOPS 2080 // NUM_INTER_HOPS*416
 #define UDP_PORT 12345      // UDP destination port used to signalize the presence of INT
 #define SCION_DOMAIN_ID 0x0001  // SCION-specific domain ID used in INT
+#define INT_IDENTIFIER 0x00494e54
 
 // Checks for defined values
 #if !defined(NUM_INTER_HOPS)

@@ -22,6 +22,7 @@
 
 
 #define CPU_PORT 128
+#define INT_IDENTIFIER 0x00494e54
 
 using p4::config::v1::P4Info;
 
@@ -124,15 +125,22 @@ bool IntController::handlePacketIn(SwitchConnection& con, const p4::v1::PacketIn
     auto payloadLen = packetIn.payload().length();
     uint32_t pos = 0;
     
-    // Check whether the int_cpu header (8 byte length) can be existent
-    if (payloadLen < 8) {
+    // Check whether the int_cpu header (16 byte length) can be existent
+    if (payloadLen < 16) {
         std::cout << "ERROR: Received INT stack with invalid length!" << std::endl;
         return false;
     }
-    // Get header length from int_cpu header
+    
+    // Get identifier and header length from int_cpu header
+    auto identifier = takeUint64(payload, pos);
+    pos += 8;
     auto hdrLen = takeUint64(payload, pos);
     pos += 8;
     
+    // Check identifier
+    if (identifier != INT_IDENTIFIER)
+        return false;
+        
     // Check if header with this lentgh can be existent in payload
     if (payloadLen - pos < hdrLen) {
         std::cout << "ERROR: Ill-formated data received. Cannot be read." << std::endl;

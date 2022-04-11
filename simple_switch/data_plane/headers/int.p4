@@ -83,6 +83,7 @@ header scion_as_addr_h {
 }
 
 header int_cpu_h {
+    bit<64> identifier;
     bit<64> cpuHdrLen;
 }
 
