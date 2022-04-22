@@ -12,11 +12,11 @@ cd ~
 git clone https://github.com/scionproto/scion
 cd scion
 ./tools/install_bazel
-APTARGS='-y' ./env/deps
+APTARGS='-y' ./tools/install_deps
 sudo apt-get install -y python-is-python3
 source ~/.profile
 ./scion.sh bazel_remote
-./scion.sh build
+make
 docker stop bazel-remote-cache
 
 
@@ -40,7 +40,7 @@ cd scion-apps
 #### Dependencies
 sudo apt-get install -y libpam0g-dev
 curl -fsSL -O https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
-sudo sh ./install.sh -b /usr/local/go/bin v1.40.1
+sudo sh ./install.sh -b /usr/local/go/bin v1.43.0
 rm install.sh
 
 ### Build
@@ -49,6 +49,7 @@ sudo cp -t /usr/local/go/bin bin/scion-*
 
 
 ### Install boost from source
+sudo apt install build-essential
 cd ~
 curl -fsSL -O https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.tar.bz2
 if ! echo "8681f175d4bdb26c52222665793eef08490d7758529330f98d3b29dd0735bccc boost_1_78_0.tar.bz2" | sha256sum -c -; then
@@ -65,6 +66,7 @@ sudo ./b2 install
 
 ### Install gRPC from source
 #### https://grpc.io/docs/languages/cpp/quickstart/
+sudo apt-get install -y cmake
 cd ~
 git clone --recurse-submodules -b v1.43.0 https://github.com/grpc/grpc.git
 cd grpc
@@ -80,7 +82,6 @@ sudo make install
 cd ~
 git clone https://github.com/nanomsg/nanomsg.git
 cd nanomsg
-sudo apt-get install -y gcc cmake
 mkdir build
 cd build
 cmake ..
@@ -145,7 +146,6 @@ make -j $(nproc)
 sudo make install
 sudo ldconfig
 cd ~/behavioral-model/targets/simple_switch_grpc
-./autogen.sh
 ./configure --with-thrift
 make -j $(nproc)
 sudo make install
@@ -175,7 +175,7 @@ python3 backends/ebpf/build_libbpf
 mkdir build
 cd build
 cmake ..
-make -j $(nproc)
+make -j 2 # very memory intensive
 sudo make install
 
 
@@ -190,15 +190,29 @@ cmake ..
 sudo cmake --build . --target install
 
 
-### Install P4 examples
-#### https://github.com/lschulz/p4-examples
+### Install cppkafka
+#### https://github.com/mfontanini/cppkafka
+sudo apt-get install -y librdkafka-dev
 cd ~
-git clone https://github.com/lschulz/p4-examples.git
-cd p4-examples
+git clone https://github.com/mfontanini/cppkafka.git
+cd cppkafka
+mkdir build
+cd build
+cmake ..
+make -j $(nproc)
+sudo make install
+sudo ldconfig
+
+
+### Install P4 examples
+#### https://github.com/netsys-lab/scion-int-p4.git
+cd ~
+git clone https://github.com/netsys-lab/scion-int-p4.git
+cd scion-int-p4
 
 #### Dependencies
-sudo apt-get install -y jq yq mininet
-sudo pip3 install mininet
+sudo apt-get install -y jq mininet doctest-dev
+sudo pip3 install yq mininet
 
 #### Build
 cd simple_switch/l2_switch_grpc

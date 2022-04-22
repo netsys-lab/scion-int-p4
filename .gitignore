@@ -1,5 +1,6 @@
 *.cpp.o
 *.cpp.d
+.vagrant
 build
 docs
 log
