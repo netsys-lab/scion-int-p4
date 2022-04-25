@@ -1,4 +1,4 @@
-P4_SRC = l2_switch_grpc.p4
+P4_SRC = l2_switch.p4
 TOPOFALGS = --grpc localhost:9559 --cpu-port 128
 
 VPATH := controller:../control_plane:../control_plane/controllers

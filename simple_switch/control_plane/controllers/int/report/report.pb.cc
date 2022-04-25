@@ -198,11 +198,12 @@ const char descriptor_table_protodef_report_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "_BYTES\020\021\022\031\n\025INGRESS_RX_DROP_COUNT\020\022\022\027\n\023E"
   "GRESS_TX_PKT_COUNT\020\023\022\023\n\017EGRESS_TX_BYTES\020"
   "\024\022\030\n\024EGRESS_TX_DROP_COUNT\020\025\022\032\n\026INGRESS_R"
-  "X_UTILIZATION\020\026b\006proto3"
+  "X_UTILIZATION\020\026B7Z5github.com/lschulz/p4"
+  "-examples/telemetry/kafka/reportb\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_report_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_report_2eproto = {
-  false, false, 1183, descriptor_table_protodef_report_2eproto, "report.proto", 
+  false, false, 1240, descriptor_table_protodef_report_2eproto, "report.proto", 
   &descriptor_table_report_2eproto_once, nullptr, 0, 5,
   schemas, file_default_instances, TableStruct_report_2eproto::offsets,
   file_level_metadata_report_2eproto, file_level_enum_descriptors_report_2eproto, file_level_service_descriptors_report_2eproto,
