@@ -69,7 +69,7 @@ cmd_run() {
 
     # Run controller
     local SW_BUILD_DIR=../simple_switch/${SWITCH}/build
-    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/l2_switch.json \
+    $SW_BUILD_DIR/controller/ctrl $SW_BUILD_DIR/p4info.txt $SW_BUILD_DIR/${SWITCH}.json \
     localhost:9559 0 1 > log/controller &
 
     # Signal containers to start SCION
