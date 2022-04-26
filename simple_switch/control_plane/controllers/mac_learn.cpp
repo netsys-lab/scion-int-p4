@@ -19,9 +19,9 @@ constexpr uint32_t NUM_SWITCH_PORTS = 8;
 
 // The IDs of actions and tables are set by @id annotations in the P4 source.
 constexpr uint32_t ACTION_NONE = 0x01000001;
-constexpr uint32_t ACTION_FORWARD = 0x01000003;
-constexpr uint32_t TABLE_LEARN = 0x02000001;
-constexpr uint32_t TABLE_FORWARD = 0x02000002;
+constexpr uint32_t ACTION_FORWARD = 0x01001002;
+constexpr uint32_t TABLE_LEARN = 0x02001001;
+constexpr uint32_t TABLE_FORWARD = 0x02001002;
 
 // The ID of the MAC learn digest is read from the P4Info message.
 static const char* DIGEST_MAC_LEARN_NAME = "macLearnMsg_t";
